@@ -3,7 +3,7 @@
 // Used by Jll Server.rc
 //
 #define IDD_ABOUTBOX                    100
-#define IDD_FORMVIEW                    101
+#define IDD_FILEOPENORD                 101
 #define IDD_DIALOGBAR                   103
 #define IDR_MAINFRAME                   128
 #define IDR_JLLSERTYPE                  129
@@ -20,6 +20,6 @@
 #define _APS_NEXT_RESOURCE_VALUE        139
 #define _APS_NEXT_COMMAND_VALUE         32772
 #define _APS_NEXT_CONTROL_VALUE         1010
-#define _APS_NEXT_SYMED_VALUE           101
+#define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

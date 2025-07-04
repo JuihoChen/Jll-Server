@@ -3,9 +3,70 @@
 <pre>
 <h1>Build Log</h1>
 <h3>
---------------------Configuration: Jll Server - Win32 Debug--------------------
+--------------------Configuration: Jll Server - Win32 Release--------------------
 </h3>
 <h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\JUIHO_~1.PCP\LOCALS~1\Temp\RSPF4.tmp" with contents
+[
+/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /FAs /Fa"Release/" /FR"Release/" /Fp"Release/Jll Server.pch" /Yu"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"C:\Program Files\Microsoft Visual Studio\MyProjects\Jll Server\_Except.cpp"
+"C:\Program Files\Microsoft Visual Studio\MyProjects\Jll Server\BArchive.cpp"
+"C:\Program Files\Microsoft Visual Studio\MyProjects\Jll Server\Direct.cpp"
+"C:\Program Files\Microsoft Visual Studio\MyProjects\Jll Server\Jll Server.cpp"
+"C:\Program Files\Microsoft Visual Studio\MyProjects\Jll Server\Jll ServerView.cpp"
+"C:\Program Files\Microsoft Visual Studio\MyProjects\Jll Server\MainFrm.cpp"
+"C:\Program Files\Microsoft Visual Studio\MyProjects\Jll Server\Paralle2.cpp"
+"C:\Program Files\Microsoft Visual Studio\MyProjects\Jll Server\Parallel.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\JUIHO_~1.PCP\LOCALS~1\Temp\RSPF4.tmp" 
+Creating temporary file "C:\DOCUME~1\JUIHO_~1.PCP\LOCALS~1\Temp\RSPF5.tmp" with contents
+[
+/nologo /subsystem:windows /incremental:no /pdb:"Release/Jll Server.pdb" /machine:I386 /out:"Release/Jll Server.exe" 
+".\Release\_Except.obj"
+".\Release\BArchive.obj"
+".\Release\Direct.obj"
+".\Release\DIRPKR.OBJ"
+".\Release\Jll Server.obj"
+".\Release\Jll ServerDoc.obj"
+".\Release\Jll ServerView.obj"
+".\Release\MainFrm.obj"
+".\Release\Paralle2.obj"
+".\Release\Parallel.obj"
+".\Release\PortTalk.obj"
+".\Release\StdAfx.obj"
+".\Release\Jll Server.res"
+]
+Creating command line "link.exe @C:\DOCUME~1\JUIHO_~1.PCP\LOCALS~1\Temp\RSPF5.tmp"
+<h3>Output Window</h3>
+Compiling...
+_Except.cpp
+BArchive.cpp
+Direct.cpp
+Jll Server.cpp
+Jll ServerView.cpp
+MainFrm.cpp
+Paralle2.cpp
+Parallel.cpp
+Generating Code...
+Linking...
+Creating temporary file "C:\DOCUME~1\JUIHO_~1.PCP\LOCALS~1\Temp\RSPF7.tmp" with contents
+[
+/nologo /o"Release/Jll Server.bsc" 
+".\Release\StdAfx.sbr"
+".\Release\_Except.sbr"
+".\Release\BArchive.sbr"
+".\Release\Direct.sbr"
+".\Release\DIRPKR.SBR"
+".\Release\Jll Server.sbr"
+".\Release\Jll ServerDoc.sbr"
+".\Release\Jll ServerView.sbr"
+".\Release\MainFrm.sbr"
+".\Release\Paralle2.sbr"
+".\Release\Parallel.sbr"
+".\Release\PortTalk.sbr"]
+Creating command line "bscmake.exe @C:\DOCUME~1\JUIHO_~1.PCP\LOCALS~1\Temp\RSPF7.tmp"
+Creating browse info file...
+<h3>Output Window</h3>
 
 
 

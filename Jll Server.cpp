@@ -8,6 +8,7 @@
 //     v0.10   OCT 19, 2004   derive from CFileDialog to create a new class that allows
 //                            the user to select a directory. (adapted from DIRPK)
 //     v0.11   OCT 22, 2004   create a worker thread (background) as the Server.
+//     v0.12   NOV 01, 2004   complete XP-DOS communication, and keep on debugging.
 
 #include "stdafx.h"
 #include "Jll Server.h"
@@ -281,24 +282,7 @@ void CJllServerApp::LoadProfileStrings()
 		::GetCurrentDirectory( sizeof szPath, szPath );
 		m_sStartingDir = szPath;
 	}
-
-/***** the following is not necessary for illegal path like "E:"
-	::SetCurrentDirectory returns ERROR_NOT_READY (device is not ready)
-	for this kind of error.
-
-	HANDLE hFile;					// Handle to found file
-	WIN32_FIND_DATA stFindData;		// Info about the found file
-
-	// First, see if there's anything in the directory
-	hFile = FindFirstFile( m_sStartingDir + "\\"_ALLFILES , &stFindData );
-	if( INVALID_HANDLE_VALUE == hFile )
-	{
-		::GetCurrentDirectory( sizeof szPath, szPath );
-		m_sStartingDir = szPath;
-	}
-	FindClose( hFile );
-********/
- }
+}
 
 void CJllServerApp::StoreProfileStrings()
 {

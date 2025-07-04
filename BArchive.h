@@ -17,6 +17,29 @@ class CDCGuest;
 class CDCServer;
 class CDirectCable;
 
+class CTimeDos : public CObject
+{
+public:
+// Constructors
+	CTimeDos();
+	CTimeDos( const CTimeDos& timeSrc );
+// Attributes
+	LONG GetTime() const;
+// Operations
+	const CTimeDos& operator=( const CTime& timeSrc );
+	const CTimeDos& operator=( const CTimeDos& timeSrc );
+	const CTimeDos& operator=( DWORD mtime );
+	BOOL operator!=( const CTimeDos other ) const;
+private:
+	union {
+		DWORD m_time;
+		struct {
+			WORD m_wTime;
+			WORD m_wDate;
+		};
+	};
+};
+
 class CBArchive : public CObject  
 {
 public:
@@ -39,12 +62,12 @@ public:
 	// Insertion operations
 	CBArchive& operator<<( BYTE by );
 	CBArchive& operator<<( LONG l );
-	CBArchive& operator<<( CTime t );
+	CBArchive& operator<<( CTimeDos t );
 
 	// Extraction operations
 	CBArchive& operator>>( BYTE& by );
 	CBArchive& operator>>( LONG& l );
-	CBArchive& operator>>( CTime& t );
+	CBArchive& operator>>( CTimeDos& t );
 
 	// pointer movement operations
 	CBArchive& operator+=( const int nOffset );
@@ -64,12 +87,6 @@ private:
 public:
     virtual void AssertValid() const;
 #endif
-};
-
-class CTimeDos : public CTime
-{
-public:
-	CTimeDos& operator=( CTime& other );
 };
 
 class CBObject : public CObject
@@ -111,6 +128,19 @@ public:
 };
 
 
+inline CTimeDos::CTimeDos()
+	{ }
+inline CTimeDos::CTimeDos( const CTimeDos& timeSrc )
+	{ m_time = timeSrc.m_time; }
+inline const CTimeDos& CTimeDos::operator=( const CTimeDos& timeSrc )
+	{ m_time = timeSrc.m_time; return *this; }
+inline const CTimeDos& CTimeDos::operator=( DWORD mtime )
+	{ m_time = mtime; return *this; }
+inline BOOL CTimeDos::operator!=( const CTimeDos other ) const
+	{ return m_time != other.m_time; }
+inline LONG CTimeDos::GetTime() const
+	{ return m_time; }
+
 inline BOOL CBArchive::IsLoading() const
 	{ return (m_nMode & CBArchive::load) != 0; }
 inline BOOL CBArchive::IsStoring() const
@@ -123,14 +153,14 @@ inline CBArchive& CBArchive::operator<<( BYTE by )
 	{ *(BYTE FAR*)m_fpBufCur = by; m_fpBufCur += sizeof(BYTE); return *this; }
 inline CBArchive& CBArchive::operator<<( LONG l )
 	{ *(LONG FAR*)m_fpBufCur = l; m_fpBufCur += sizeof(LONG); return *this; }
-inline CBArchive& CBArchive::operator<<( CTime t )
+inline CBArchive& CBArchive::operator<<( CTimeDos t )
 	{ return *this << t.GetTime(); }
 inline CBArchive& CBArchive::operator>>( BYTE& by )
 	{ by = *(BYTE FAR*)m_fpBufCur; m_fpBufCur += sizeof(BYTE); return *this; }
 inline CBArchive& CBArchive::operator>>( LONG& l )
 	{ l = *(LONG FAR*)m_fpBufCur; m_fpBufCur += sizeof(LONG); return *this; }
-inline CBArchive& CBArchive::operator>>( CTime& t )
-	{ t = *(time_t FAR*)m_fpBufCur; m_fpBufCur += sizeof(time_t); return *this; }
+inline CBArchive& CBArchive::operator>>( CTimeDos& t )
+	{ t = *(LONG FAR*)m_fpBufCur; m_fpBufCur += sizeof(LONG); return *this; }
 inline CBArchive& CBArchive::operator<<( const CBObject* pBOb )
 	{ WriteBObject( pBOb ); return *this; }
 inline CBArchive& CBArchive::operator>>( CBObject* pBOb )

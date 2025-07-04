@@ -110,7 +110,7 @@ void CJllServerView::OnButtonForDir()
  	// Indicates that the lpTemplateName member is a pointer to the name of a
 	// dialog template resource in the module identified by the hInstance member.
     cfdlg.m_ofn.hInstance = AfxGetInstanceHandle();
-	cfdlg.m_ofn.lpTemplateName = MAKEINTRESOURCE(FILEOPENORD);
+	cfdlg.m_ofn.lpTemplateName = MAKEINTRESOURCE( IDD_FILEOPENORD );
 	// If the OFN_EXPLORER flag is set, the system uses the specified template to
 	// create a dialog box that is a child of the default Explorer-style dialog box.
 	// If the OFN_EXPLORER flag is not set, the system uses the template to create
@@ -118,7 +118,7 @@ void CJllServerView::OnButtonForDir()
 	cfdlg.m_ofn.Flags &= ~OFN_EXPLORER;
 	// Lines of some code snippet is used to circumvent the function call to
 	// ::SetCurrentDirectory( m_sStartingFolder )
-	if (!m_sStartingFolder.IsEmpty())
+	if( !m_sStartingFolder.IsEmpty() )
 		cfdlg.m_ofn.lpstrInitialDir = m_sStartingFolder;
 
     if( IDOK == cfdlg.DoModal() )
@@ -140,26 +140,6 @@ void CJllServerView::OnButtonForDir()
 
 	// Reenable timer to detect the guest after this Dialog.
 	pFrame->OnStartTimer( CMainFrame::nTimerIdDetectGuest );	
-/**************************************************
-	CChooseDirDlg dlg( m_szBackupDirs );
-	int nResponse = dlg.DoModal();
-	if (nResponse == IDOK)
-	{
-		// TODO: Place code here to handle when the dialog is
-		//  dismissed with OK
-		if( m_sStartingFolder != dlg.m_sFolderName )
-		{
-			GetDocument()->FormatOutput( "Starting Folder is changed." );
-		}
-		m_sStartingFolder = dlg.m_sFolderName;
-		UpdateData( FALSE );
-	}
-	else if (nResponse == IDCANCEL)
-	{
-		// TODO: Place code here to handle when the dialog is
-		//  dismissed with Cancel
-	}
-*****/
 }
 
 void CJllServerView::OnDraw(CDC* pDC) 

@@ -13,6 +13,21 @@ static char THIS_FILE[]=__FILE__;
 #define new DEBUG_NEW
 #endif
 
+// Because the difference of mktime() between VC6 & MSC8, we don't use CTime
+// to transfer on communication. DOS style date & time (4 bytes) are used instead.
+const CTimeDos& CTimeDos::operator=( const CTime& timeSrc )
+{
+	ASSERT_VALID( this );
+
+	// There's a CTime difference between VC++ 6.0 & MSC8
+	SYSTEMTIME sys;
+	timeSrc.GetAsSystemTime( sys );
+	FILETIME local;
+	SystemTimeToFileTime( &sys, &local );
+	FileTimeToDosDateTime( &local, &m_wDate, &m_wTime );
+	return *this;
+}
+
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
@@ -237,11 +252,3 @@ void CFileInfo::Dump( CDumpContext& dc ) const
 	dc << sTemp2;
 }
 #endif
-
-CTimeDos& CTimeDos::operator=( CTime& other )
-{
-	// Compensate the CTime difference between VC6 & MSC8 with a CTimeSpan.
-	CTimeSpan s( 0, 15, 0, 0 );			// 15 hours is an observation
-	*(CTime*)(this) = other + s;
-	return *this;
-}

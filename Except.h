@@ -76,8 +76,7 @@ public:
 class CTimer : CObject
 {
 public:
-	CTimer( CLOCK_T interval, LPCSTR msghdr = NULL )
-		{ SetTimer( interval, msghdr ); }
+	CTimer( CLOCK_T interval, LPCSTR msghdr = NULL ) { SetTimer( interval, msghdr ); }
 	CTimer() { m_fEnabled = FALSE; }
 	void SetTimer( CLOCK_T interval, LPCSTR msghdr = NULL );
 	void SetMsghdr( LPCSTR msghdr ) { m_strException = msghdr; }

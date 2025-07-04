@@ -132,8 +132,9 @@ void CMainFrame::OnTimer(UINT nIDEvent)
 	switch( nIDEvent )
 	{
 	case nTimerIdDetectGuest:
+#ifdef _DEBUG
 		MessageBeep( 0xFFFFFFFF );  // Beep
-
+#endif
 		GetMyApp()->m_lptNibble.EnterIdleCondition();
 
 		if( !GetMyApp()->m_lptNibble.DetectTheGuest() )
@@ -164,7 +165,7 @@ BOOL CMainFrame::DestroyWindow()
 	if( m_ExceptDlg.m_hWnd )
 	{
 		m_ExceptDlg.DestroyWindow();
-///		m_ExceptDlg.m_hWnd = 0;
+		m_ExceptDlg.m_hWnd = 0;			// Invalidate Handle evev though redundant!
 	}
 	return CFrameWnd::DestroyWindow();
 }
@@ -238,6 +239,7 @@ BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
 		else {
 			m_ExceptDlg.Create( IDD_EXCEPTBOX, this );
 		}
+		m_ExceptDlg.UpdateData( FALSE );		// Update data in CEdit control.
 		m_ExceptDlg.ShowWindow( SW_SHOW );
 		m_ExceptDlg.UpdateWindow();
 		return TRUE;

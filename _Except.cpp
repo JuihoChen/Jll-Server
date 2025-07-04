@@ -185,6 +185,6 @@ void CExceptDlg::AddStringToEdit( const char* s )
 		m_sExceptEdit.Empty();
 	}
 	m_sExceptEdit += s;
-	UpdateData( FALSE );
+///	UpdateData( FALSE );	// System assertion! Cannot be executed in worker thread!
 }
 
