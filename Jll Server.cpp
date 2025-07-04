@@ -2,9 +2,11 @@
 //
 //     Copyright (c) 2004, Compal Electronics, Inc.  All rights reserved.
 //
-//     Ver.    Date           Logs
-//     -----   ----------   -------------
-//     v0.00   OCT 01, 04   to create.
+//     Ver.    Date             Logs
+//     -----   ------------   -------------
+//     v0.00   OCT 01, 2004   to create.
+//     v0.10   OCT 19, 2004   derive from CFileDialog to create a new class that allows
+//                            the user to select a directory. (adapted from DIRPK)
 
 #include "stdafx.h"
 #include "Jll Server.h"
@@ -44,6 +46,8 @@ CJllServerApp::CJllServerApp()
 	// TODO: add construction code here,
 	// Place all significant initialization in InitInstance
 	_OutputDebugString( "We start here..." );
+
+	m_pTheServer = 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -59,7 +63,8 @@ BOOL CJllServerApp::InitInstance()
 	// Check only running on WinXP/NT systems.
 	if (GetVersion() & 0x80000000)
 	{
-		::MessageBoxA( NULL,
+		MessageBoxA(
+			NULL,
 			"This application is only allowed to be running on Windows XP or NT.",
 			"Jll Server for DCC",
 			MB_ICONSTOP | MB_OK
@@ -67,12 +72,13 @@ BOOL CJllServerApp::InitInstance()
 		return FALSE; // and fail
 	}
 
-	// Create the parallel port.
-	CNibbleModeProto lpt;
+	// Check if the parallel port setup okay?
+	m_lptNibble.Setup();
 
-	if( lpt.PortIsPresent() == FALSE )
+	if( m_lptNibble.PortIsPresent() == FALSE )
 	{
-		::MessageBoxA( NULL,
+		MessageBoxA(
+			NULL,
 			"This application needs a printer port on the system.",
 			"Jll Server for DCC",
 			MB_ICONSTOP | MB_OK
@@ -81,21 +87,21 @@ BOOL CJllServerApp::InitInstance()
 	}
 
 	// Only one instance is allowed to be running.
-	HANDLE hMapping;
-	hMapping = CreateFileMapping( (HANDLE) 0xffffffff,
-								NULL,
-								PAGE_READONLY,
-								0,
-								32,
-								"MyTestMap" );
+	HANDLE hMapping = CreateFileMapping(
+		(HANDLE) 0xffffffff,
+		NULL,
+		PAGE_READONLY,
+		0,
+		32,
+		"MyTestMap"
+	);
+
 	if( hMapping )
 	{
 		if( GetLastError() == ERROR_ALREADY_EXISTS )
 		{
-			//
 			// Display something that tells the user
 			// the app is already running.
-			//
 			AfxMessageBox( "Application is already running." );
 			///MessageBox( NULL, "Application is already running.", m_pszAppName, MB_OK );
 			///SetActiveWindow( FindWindow( _T("Jll Server"), NULL ) );
@@ -104,10 +110,31 @@ BOOL CJllServerApp::InitInstance()
 	}
 	else
 	{
-		//
 		// Some other error; handle error.
-		//
 		AfxMessageBox( "Error creating mapping" );
+		return FALSE;
+	}
+
+	// Try to open PortTalk driver to touch LPT ports...
+	switch( m_drvPortTalk.OpenPortTalk() )
+	{
+	case CPortTalk::Success:
+		break;
+	case CPortTalk::InvalidHandleValue:
+		MessageBoxA(
+			NULL,
+			"Couldn't access PortTalk Driver.",
+			"Jll Server for DCC",
+			MB_ICONSTOP | MB_OK
+		);
+		return FALSE;
+	case CPortTalk::IoControlError:
+		MessageBoxA(
+			NULL,
+			"Error in calling DeviceIoControl.",
+			"Jll Server for DCC",
+			MB_ICONSTOP | MB_OK
+		);
 		return FALSE;
 	}
 
@@ -146,7 +173,8 @@ BOOL CJllServerApp::InitInstance()
 
 	// Parse command line for standard shell commands, DDE, file open
 	CCommandLineInfo cmdInfo;
-	ParseCommandLine(cmdInfo);
+	// CHANGE: Jll doesn't take command line parms to open documents
+	//ParseCommandLine(cmdInfo);
 
 	// Dispatch commands specified on the command line
 	if (!ProcessShellCommand(cmdInfo))
@@ -154,13 +182,26 @@ BOOL CJllServerApp::InitInstance()
 
 	_OutputDebugString( "CJllServerApp>Before MainWnd's Show." );
 
-	FormatOutput( "Found a printer port on 0x%x in the registry.", lpt.GetBaseAddr() );
+	FormatOutput( "Found a printer port on 0x%x in the registry.", m_lptNibble.GetBaseAddr() );
 
-	CDCServer theServer( lpt );
+	if( m_drvPortTalk.EnableIOPM( m_lptNibble.GetBaseAddr() ) != CPortTalk::Success )
+	{
+		MessageBoxA(
+			NULL,
+			"Error in IPOM setting for process.",
+			"Jll Server for DCC",
+			MB_ICONSTOP | MB_OK
+		);
+		return FALSE;
+	}
+
+	m_pTheServer = new CDCServer( m_lptNibble );
 
 	// The one and only window has been initialized, so show and update it.
 	m_pMainWnd->ShowWindow(SW_SHOW);
 	m_pMainWnd->UpdateWindow();
+
+	((CMainFrame*)m_pMainWnd)->OnStartTimer( CMainFrame::nTimerIdDetectGuest );
 
 	_OutputDebugString( "CJllServerApp>Leave App's InitInstance." );
 	return TRUE;
@@ -268,4 +309,12 @@ void CJllServerApp::FormatOutput( LPCTSTR lpszFormat, ... )
 	CString tempS;
 	pDoc->FormatOutputV( lpszFormat, argList );
 	va_end( argList );
+}
+
+int CJllServerApp::ExitInstance() 
+{
+	// TODO: Add your specialized code here and/or call the base class
+	if( m_pTheServer ) delete m_pTheServer;
+	m_pTheServer = 0;
+	return CWinApp::ExitInstance();
 }

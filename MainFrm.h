@@ -11,13 +11,17 @@
 
 class CMainFrame : public CFrameWnd
 {
-	
+	DECLARE_DYNCREATE(CMainFrame)
+
 protected: // create from serialization only
 	CMainFrame();
-	DECLARE_DYNCREATE(CMainFrame)
 
 // Attributes
 public:
+	enum {
+		nTimerIdAll = -1,
+		nTimerIdDetectGuest = 1
+	};
 
 // Operations
 public:
@@ -27,10 +31,14 @@ public:
 	//{{AFX_VIRTUAL(CMainFrame)
 	public:
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
+	virtual BOOL DestroyWindow();
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	//}}AFX_VIRTUAL
 
 // Implementation
 public:
+	UINT OnStartTimer(UINT nIDEvent);
+	void OnStopTimer(UINT nIDEvent);
 	virtual ~CMainFrame();
 #ifdef _DEBUG
 	virtual void AssertValid() const;
@@ -38,8 +46,9 @@ public:
 #endif
 
 protected:  // control bar embedded members
-	CStatusBar  m_wndStatusBar;
-	CToolBar    m_wndToolBar;
+	CStatusBar	m_wndStatusBar;
+	CToolBar	m_wndToolBar;
+	UINT		m_nTimerDetectGuest;
 
 // Generated message map functions
 protected:
@@ -47,6 +56,7 @@ protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnUpdateFileSave(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateFileSaveAs(CCmdUI* pCmdUI);
+	afx_msg void OnTimer(UINT nIDEvent);
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };

@@ -72,21 +72,37 @@ private:
 public:
 	virtual void AssertValid() const;
 #endif
+	DECLARE_DYNAMIC( CDirectCable )
 };
 
 class CDCServer : public CDirectCable
 {
+private:
+	static UINT ThreadProc( LPVOID pObj );
+	CWinThread* m_pThread;		// running thread, if any
+protected:
+	HWND	m_hWndOwner;		// HWND, *not* CWnd* of owner window
+	UINT	m_ucbMsg;			// callback message for OnProgress
+	UINT	m_uErr;				// thread error code
+	BOOL	m_bRunning;			// whether to abort: DoWork must check this
+
 public:
 	CDCServer( CNibbleModeProto& lpt );
+	~CDCServer();
+	virtual BOOL Begin( CWnd* pWndOwner = NULL, UINT ucbMsg = 0 );
+	virtual void Kill();
+protected:
+	virtual UINT DoWork();
 private:
 	BYTE m_bCDB[8];
 	CString m_sDirName;
-	CString m_sFileName;	// Wildcards incl.
+	CString m_sFileName;		// Wildcards incl.
 #ifdef _DEBUG
 public:
 	virtual void AssertValid() const;
 	virtual void Dump( CDumpContext& dc ) const;
 #endif
+	DECLARE_DYNAMIC( CDCServer )
 };
 
 #endif // !defined(AFX_DIRECT_H__87D71C20_71C8_4D12_9AC7_9DC50ABBBF65__INCLUDED_)

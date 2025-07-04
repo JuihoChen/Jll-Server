@@ -12,6 +12,9 @@ static char THIS_FILE[] = __FILE__;
 #define new DEBUG_NEW
 #endif
 
+IMPLEMENT_DYNAMIC( CDirectCable, CObject )
+IMPLEMENT_DYNAMIC( CDCServer, CDirectCable )
+
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
@@ -73,6 +76,7 @@ void CDirectCable::ReceiveIntoBuffer( register UINT nIndex, UINT nLen )
 #endif
 }
 
+#if 0
 #ifdef POLL_S7_FOR_BUSY
 void CDirectCable::SendFromBufferInByte( UINT nLen ) const
 {
@@ -103,6 +107,7 @@ void CDirectCable::ReceiveIntoBufferInByte( register UINT nIndex, UINT nLen )
 	}
 }
 #endif
+#endif
 
 #pragma check_stack()
 
@@ -130,7 +135,57 @@ void CDirectCable::AssertValid() const
 
 CDCServer::CDCServer( CNibbleModeProto& lpt ) : CDirectCable( lpt )
 {
+	m_pThread = NULL;				// Invalidate thread pointer
 	m_bCDB[ 0 ] = IllegalOpcode;	// Invalidate Opcode
+}
+
+CDCServer::~CDCServer()
+{
+	if( m_pThread )
+	{
+		TRACE0( "CDCServer: *** Warning: deleting active thread! ***\n" );
+		delete m_pThread;
+	}
+}
+
+//////////////////
+// This converts the Windows/C-style thread procedure into an MFC/C++-style
+// virtual function. To do the "work" of the thread, implement DoWork and
+// don't worry about the thread proc.
+//
+UINT CDCServer::ThreadProc( LPVOID pObj )
+{
+	CDCServer* pJob = (CDCServer*)pObj;
+	ASSERT_KINDOF( CDCServer, pJob );
+	pJob->m_uErr = pJob->DoWork();			// call virt fn to do the work
+	pJob->m_pThread = NULL;					// done: clear
+	pJob->m_bRunning = FALSE;
+	return pJob->m_uErr;					// ..and return error code to Windows
+}
+
+//////////////////
+// Begin running the worker thread. Args are owner window and callback
+// message ID to use for OnProgress notifications, if any. You could enhance
+// this to expose pritority and other AfxBeginThread args.
+//
+BOOL CDCServer::Begin( CWnd* pWndOwner /* = NULL */, UINT ucbMsg /* = 0 */)
+{
+	m_hWndOwner = pWndOwner->GetSafeHwnd();
+	m_ucbMsg = ucbMsg;
+	m_uErr = 0;
+	m_bRunning = TRUE;
+	m_pThread = AfxBeginThread( ThreadProc, this );
+	return m_pThread != NULL;
+}
+
+//////////////////
+// Abort the thread. All this does is set m_bAbort = TRUE.
+// It's up to you to check m_bAbort periodically in your DoWork function.
+// You can override to use CEvent if you need to.
+//
+void CDCServer::Kill()
+{
+	m_bRunning = FALSE;
 }
 
 #ifdef _DEBUG
@@ -148,3 +203,10 @@ void CDCServer::Dump( CDumpContext& dc ) const
 	dc << "\n";
 }
 #endif
+
+UINT CDCServer::DoWork()
+{
+	TRACE( "Hello, how are you!" );
+	TRACE1( "port# is %x", m_rNibbleModeDev.GetBaseAddr() );
+	return 0;
+}

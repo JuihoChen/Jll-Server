@@ -15,15 +15,15 @@ Class3=CJllServerView
 Class4=CMainFrame
 
 ResourceCount=6
-Resource1=IDR_MAINFRAME
+Resource1=IDD_ABOUTBOX
 Class5=CAboutDlg
-Resource2=IDD_DIALOGBAR
+Resource2=IDR_MAINFRAME
 Resource3=IDD_DIALOGBAR (English (U.S.))
-Resource4=IDD_ABOUTBOX
+Resource4=IDD_DIALOGBAR
 Resource5=IDD_CHOOSEDIR_DIALOG (English (U.S.))
 Class6=CChooseDirDlg
 Class7=CNibbleModeProto
-Resource6=IDD_CHOOSEDIR_DIALOG
+Resource6=1536
 
 [CLS:CJllServerApp]
 Type=0
@@ -160,18 +160,6 @@ Control6=IDC_STATIC,static,1342308352
 Control7=IDC_STATIC,static,1342308352
 Class=CChooseDirDlg
 
-[DLG:IDD_CHOOSEDIR_DIALOG]
-Type=1
-Class=CChooseDirDlg
-ControlCount=7
-Control1=IDOK,button,1342242817
-Control2=IDCANCEL,button,1342242816
-Control3=IDC_DIRECTORY_NAME,edit,1350633600
-Control4=IDC_DIRECTORY_TREE,SysTreeView32,1342242834
-Control5=IDC_DRIVE_COMBO,combobox,1344340226
-Control6=IDC_STATIC,static,1342308352
-Control7=IDC_STATIC,static,1342308352
-
 [CLS:CChooseDirDlg]
 Type=0
 HeaderFile=ChooseDirDlg.h
@@ -188,4 +176,23 @@ ImplementationFile=parallel.cpp
 BaseClass=CStatic
 Filter=W
 LastObject=CNibbleModeProto
+
+[DLG:1536]
+Type=1
+Class=?
+ControlCount=14
+Control1=1090,static,1073872896
+Control2=1152,edit,1082197120
+Control3=1120,listbox,1084297299
+Control4=65535,static,1342308352
+Control5=1088,static,1342308480
+Control6=1121,listbox,1352732755
+Control7=1089,static,1073872896
+Control8=1136,combobox,1084293187
+Control9=1091,static,1342308352
+Control10=1137,combobox,1352729427
+Control11=IDOK,button,1342373889
+Control12=IDCANCEL,button,1342373888
+Control13=1038,button,1342373888
+Control14=1040,button,1342373891
 

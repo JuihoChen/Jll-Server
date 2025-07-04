@@ -37,7 +37,6 @@ public:
 public:
 	void InvalidateForNewLine();
 	CJllServerDoc* GetDocument();
-	CString m_szBackupDirs[32];
 
 // Overrides
 	// ClassWizard generated virtual function overrides

@@ -6,7 +6,8 @@
 
 #include "Jll ServerDoc.h"
 #include "Jll ServerView.h"
-#include "ChooseDirDlg.h"
+#include "dirpkr.h"
+#include "dlgs.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -92,8 +93,42 @@ void CJllServerView::OnButtonForDir()
 	// TODO: Add your control notification handler code here
 	_OutputDebugString( "View::Button for Dir. called." );
 	
-	::SetCurrentDirectory( m_sStartingFolder );
+	CMyFileDlg cfdlg(
+		FALSE,
+		NULL,
+		NULL,
+		/*OFN_SHOWHELP |*/ OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT | OFN_ENABLETEMPLATE,
+		NULL,
+		GetMyApp()->m_pMainWnd
+	);
+ 	// Indicates that the lpTemplateName member is a pointer to the name of a
+	// dialog template resource in the module identified by the hInstance member.
+    cfdlg.m_ofn.hInstance = AfxGetInstanceHandle();
+	cfdlg.m_ofn.lpTemplateName = MAKEINTRESOURCE(FILEOPENORD);
+	// If the OFN_EXPLORER flag is set, the system uses the specified template to
+	// create a dialog box that is a child of the default Explorer-style dialog box.
+	// If the OFN_EXPLORER flag is not set, the system uses the template to create
+	// an old-style dialog box that replaces the default dialog box.
+	cfdlg.m_ofn.Flags &= ~OFN_EXPLORER;
+	// Lines of some code snippet is used to circumvent the function call to
+	// ::SetCurrentDirectory( m_sStartingFolder )
+	if (!m_sStartingFolder.IsEmpty())
+		cfdlg.m_ofn.lpstrInitialDir = m_sStartingFolder;
 
+    if( IDOK == cfdlg.DoModal() )
+    {
+		WORD wFileOffset = cfdlg.m_ofn.nFileOffset;		//for convenience
+
+		cfdlg.m_ofn.lpstrFile[ wFileOffset-1 ] = 0;		//Nuke the "Junk"
+
+		if( m_sStartingFolder != cfdlg.m_ofn.lpstrFile )
+		{
+			GetDocument()->FormatOutput( "Starting Folder is changed." );
+		}
+		m_sStartingFolder = cfdlg.m_ofn.lpstrFile;
+		UpdateData( FALSE );
+    }
+/**************************************************
 	CChooseDirDlg dlg( m_szBackupDirs );
 	int nResponse = dlg.DoModal();
 	if (nResponse == IDOK)
@@ -112,6 +147,7 @@ void CJllServerView::OnButtonForDir()
 		// TODO: Place code here to handle when the dialog is
 		//  dismissed with Cancel
 	}
+*****/
 }
 
 void CJllServerView::OnDraw(CDC* pDC) 

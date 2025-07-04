@@ -22,11 +22,6 @@ CParPort::CParPort()
 	m_nPortType = ptNONE;
 }
 
-CParPort::~CParPort()
-{
-
-}
-
 void CParPort::SetBaseAddr( WORD base )
 {
 	ASSERT_VALID( this );
@@ -63,25 +58,11 @@ void CParPort::AssertValid() const
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-CNibbleModeProto::CNibbleModeProto()
-{
-	LONG res;
-
-	// Only LPT1 & LPT2 are tested against.
-	if( (res = GetLptPortInTheRegistry( 0 )) < 0 )
-	{
-		if( (res = GetLptPortInTheRegistry(	1 )) < 0 )
-		{
-			return;
-		}
-	}
-
-	m_cParaport.SetBaseAddr( (WORD)res );
-}
-
 CNibbleModeProto::~CNibbleModeProto()
 {
-
+	ASSERT_VALID( this );
+	if( PortIsPresent() )		// release the bus (set not busy).
+		m_cParaport.WriteDataPort( oSTROBE_VAL );
 }
 
 LONG CNibbleModeProto::GetLptPortInTheRegistry( int myPort )
@@ -204,4 +185,101 @@ void CNibbleModeProto::AssertValid() const
 }
 #endif
 
+void CNibbleModeProto::Setup()
+{
+	LONG res;
+
+	// Only LPT1 & LPT2 are tested against.
+	if( (res = GetLptPortInTheRegistry( 0 )) < 0 )
+	{
+		if( (res = GetLptPortInTheRegistry(	1 )) < 0 )
+		{
+			return;
+		}
+	}
+
+	m_cParaport.SetBaseAddr( (WORD)res );
+}
+
+inline BYTE CNibbleModeProto::MakeByteFromNibbles(BYTE bLow, BYTE bHigh)
+{
+#ifdef POLL_S7_FOR_BUSY
+	return ((bLow & 0x78) >> 3) + ((bHigh & 0x78) << 1);
+#else
+	static BYTE abLoCnvs[] =
+	{
+		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,			// 0x00-0x07
+		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,			// 0x08-0x0f
+		0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,			// 0x10-0x17
+		0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f			// 0x18-0x2f
+	};
+	static BYTE abHiCnvs[] =
+	{
+		0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70,			// 0x00-0x07
+		0x00, 0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70,			// 0x08-0x0f
+		0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0,			// 0x10-0x17
+		0x80, 0x90, 0xa0, 0xb0, 0xc0, 0xd0, 0xe0, 0xf0			// 0x18-0x2f
+	};
+	return abLoCnvs[ bLow >> 3 ] + abHiCnvs[ bHigh >> 3 ];
+#endif
+}
+
 #pragma check_stack( off )	// Turn off switch for code speed...
+
+//===================== Connection Build Up ===========================
+
+void CNibbleModeProto::EnterIdleCondition() const
+{
+	ASSERT_VALID( this );
+	ASSERT( PortIsPresent() );
+	m_cParaport.WriteDataPort( oSTROBE_VAL ); // Initialize strobe to 1.
+}
+
+BOOL CNibbleModeProto::DetectTheGuest() const
+{
+	ASSERT_VALID( this );
+
+	if( (m_cParaport.ReadStatusPort() & iBUSY_VAL) != 0x0) // S6=1 (not busy)
+	{
+		return FALSE;
+	}
+
+	for( int theNo = 0xF; theNo >= 0; theNo -- )
+	{
+		DWORD dwStart = GetTickCount();
+		for( ;; )
+		{
+			if( GetTickCount() - dwStart > 20 )
+			{
+				TRACE1( "Error from Guest to echo number %d.", theNo );
+				return FALSE;
+			}
+			if( theNo & 0x1 )
+			{
+				if( (m_cParaport.ReadStatusPort() & iBUSY_VAL) != 0x0)
+				{
+					continue;
+				}
+			}
+			else if( (m_cParaport.ReadStatusPort() & iBUSY_VAL) == 0x0)
+			{
+				continue;
+			}
+			// pass conditions, check if echo right number.
+            if( MakeByteFromNibbles( m_cParaport.ReadStatusPort(), 0 ) == theNo )
+			{
+				break;
+			}
+		}
+		if( theNo & 0x1 )
+			m_cParaport.WriteDataPort( theNo );
+		else
+			m_cParaport.WriteDataPort( theNo | oSTROBE_VAL );
+	}
+	TRACE0( "Connection is built." );
+	return TRUE;
+}
+
+//=====================================================================
+
+
