@@ -28,7 +28,7 @@ END_MESSAGE_MAP()
 CJllServerDoc::CJllServerDoc()
 {
 	// TODO: add one-time construction code here
-	_OutputDebugString( "Doc constructor..." );
+	_OutputDebugString( "Doc constructor...\n" );
 
 }
 
@@ -43,7 +43,7 @@ BOOL CJllServerDoc::OnNewDocument()
 
 	// TODO: add reinitialization code here
 	// (SDI documents will reuse this document)
-	_OutputDebugString( "Doc::OnNewDocument." );
+	_OutputDebugString( "Doc::OnNewDocument.\n" );
 
 	POSITION pos = GetFirstViewPosition();
 	CView* pFirstView = GetNextView( pos );
@@ -95,7 +95,7 @@ void CJllServerDoc::Dump(CDumpContext& dc) const
 void CJllServerDoc::DeleteContents() 
 {
 	// TODO: Add your specialized code here and/or call the base class
-	_OutputDebugString( "Doc::DeleteContents." );
+	_OutputDebugString( "Doc::DeleteContents.\n" );
 
 	m_slMessages.RemoveAll();
 

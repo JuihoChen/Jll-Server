@@ -63,7 +63,7 @@ int CPortTalk::OpenPortTalk()
                
 		if( m_hPortTalk == INVALID_HANDLE_VALUE )
 		{
-			TRACE0( "CPortTalk: Couldn't access PortTalk Driver" );
+			TRACE0( "CPortTalk: Couldn't access PortTalk Driver.\n" );
 			return InvalidHandleValue;
 		}
     }
@@ -83,7 +83,7 @@ int CPortTalk::OpenPortTalk()
 
 	if( !error )
 	{
-		TRACE1( "CPortTalk: error %d occured in IOCTL_IOPM_RESTRICT_ALL_ACCESS", GetLastError() );
+		TRACE1( "CPortTalk: error %d occured in IOCTL_IOPM_RESTRICT_ALL_ACCESS\n", GetLastError() );
 		return IoControlError;
 	}
 
@@ -121,7 +121,7 @@ int CPortTalk::EnableIOPM( WORD wOffset )
 
 	if( !error )
 	{
-		TRACE1( "CPortTalk: error %d granting access to assigned Address.", GetLastError() );
+		TRACE1( "CPortTalk: error %d granting access to assigned Address.\n", GetLastError() );
 		return IoControlError;
 	}
 
@@ -138,7 +138,7 @@ int CPortTalk::EnableIOPM( WORD wOffset )
 
 	if( !error )
 	{
-		TRACE1( "CPortTalk: error occured talking to Device Driver %d.", GetLastError() );
+		TRACE1( "CPortTalk: error occured talking to Device Driver %d.\n", GetLastError() );
 		return IoControlError;
 	}
 
@@ -163,8 +163,8 @@ void CPortTalk::StartPortTalkDriver()
 		{
 			// We do not have enough rights to open the SCM, therefore we must
 			// be a poor user with only user rights.
-			TRACE0( "CPortTalk: have no rights to access the Service Control Manager" );
-			TRACE0( "CPortTalk: the PortTalk driver is not installed or started" );
+			TRACE0( "CPortTalk: have no rights to access the Service Control Manager.\n" );
+			TRACE0( "CPortTalk: the PortTalk driver is not installed or started.\n" );
 			return;
 		}
 	}
@@ -181,13 +181,13 @@ void CPortTalk::StartPortTalkDriver()
 			switch( GetLastError() )
 			{
 			case ERROR_ACCESS_DENIED:
-				TRACE0( "CPortTalk: have no rights to the PortTalk service database" );
+				TRACE0( "CPortTalk: have no rights to the PortTalk service database.\n" );
 				return;
 			case ERROR_INVALID_NAME:
-				TRACE0( "CPortTalk: The specified service name is invalid" );
+				TRACE0( "CPortTalk: The specified service name is invalid.\n" );
 				return;
 			case ERROR_SERVICE_DOES_NOT_EXIST:
-				TRACE0( "CPortTalk: The PortTalk driver does not exist" );
+				TRACE0( "CPortTalk: The PortTalk driver does not exist.\n" );
 				/***************************************************************
 				InstallPortTalkDriver();
 				break;
@@ -204,16 +204,16 @@ void CPortTalk::StartPortTalkDriver()
 						NULL );			// pointer to arguments
                     
     if( ret )
-		TRACE0( "CPortTalk: The PortTalk driver has been successfully started" );
+		TRACE0( "CPortTalk: The PortTalk driver has been successfully started.\n" );
 	else
 	{
 		err = GetLastError();
 		if( err == ERROR_SERVICE_ALREADY_RUNNING )
-			TRACE0( "CPortTalk: The PortTalk driver is already running." );
+			TRACE0( "CPortTalk: The PortTalk driver is already running.\n" );
 		else
 		{
-			TRACE0( "CPortTalk: Unknown error while starting PortTalk driver service" );
-			TRACE0( "CPortTalk: Does PortTalk.SYS exist in System Directory?" );
+			TRACE0( "CPortTalk: Unknown error while starting PortTalk driver service.\n" );
+			TRACE0( "CPortTalk: Does PortTalk.SYS exist in System Directory?\n" );
 			return;
 		}
 	}

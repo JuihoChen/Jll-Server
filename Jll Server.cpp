@@ -7,6 +7,7 @@
 //     v0.00   OCT 01, 2004   to create.
 //     v0.10   OCT 19, 2004   derive from CFileDialog to create a new class that allows
 //                            the user to select a directory. (adapted from DIRPK)
+//     v0.11   OCT 22, 2004   create a worker thread (background) as the Server.
 
 #include "stdafx.h"
 #include "Jll Server.h"
@@ -45,9 +46,7 @@ CJllServerApp::CJllServerApp()
 {
 	// TODO: add construction code here,
 	// Place all significant initialization in InitInstance
-	_OutputDebugString( "We start here..." );
-
-	m_pTheServer = 0;
+	_OutputDebugString( "We start here...\n" );
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -66,7 +65,7 @@ BOOL CJllServerApp::InitInstance()
 		MessageBoxA(
 			NULL,
 			"This application is only allowed to be running on Windows XP or NT.",
-			"Jll Server for DCC",
+			AfxGetAppName(),
 			MB_ICONSTOP | MB_OK
 		);
 		return FALSE; // and fail
@@ -80,7 +79,7 @@ BOOL CJllServerApp::InitInstance()
 		MessageBoxA(
 			NULL,
 			"This application needs a printer port on the system.",
-			"Jll Server for DCC",
+			AfxGetAppName(),
 			MB_ICONSTOP | MB_OK
 		);
 		return FALSE; // and fail
@@ -124,7 +123,7 @@ BOOL CJllServerApp::InitInstance()
 		MessageBoxA(
 			NULL,
 			"Couldn't access PortTalk Driver.",
-			"Jll Server for DCC",
+			AfxGetAppName(),
 			MB_ICONSTOP | MB_OK
 		);
 		return FALSE;
@@ -132,7 +131,7 @@ BOOL CJllServerApp::InitInstance()
 		MessageBoxA(
 			NULL,
 			"Error in calling DeviceIoControl.",
-			"Jll Server for DCC",
+			AfxGetAppName(),
 			MB_ICONSTOP | MB_OK
 		);
 		return FALSE;
@@ -158,7 +157,7 @@ BOOL CJllServerApp::InitInstance()
 
 	LoadStdProfileSettings();  // Load standard INI file options (including MRU)
 
-	// changes the current directory for the current process. 
+	// Change the current directory for the current process. 
 	LoadProfileStrings();
 
 	// Register the application's document templates.  Document templates
@@ -180,7 +179,7 @@ BOOL CJllServerApp::InitInstance()
 	if (!ProcessShellCommand(cmdInfo))
 		return FALSE;
 
-	_OutputDebugString( "CJllServerApp>Before MainWnd's Show." );
+	_OutputDebugString( "CJllServerApp>Before MainWnd's Show.\n" );
 
 	FormatOutput( "Found a printer port on 0x%x in the registry.", m_lptNibble.GetBaseAddr() );
 
@@ -189,21 +188,22 @@ BOOL CJllServerApp::InitInstance()
 		MessageBoxA(
 			NULL,
 			"Error in IPOM setting for process.",
-			"Jll Server for DCC",
+			AfxGetAppName(),
 			MB_ICONSTOP | MB_OK
 		);
 		return FALSE;
 	}
 
-	m_pTheServer = new CDCServer( m_lptNibble );
-
 	// The one and only window has been initialized, so show and update it.
 	m_pMainWnd->ShowWindow(SW_SHOW);
 	m_pMainWnd->UpdateWindow();
 
+	((CMainFrame*)m_pMainWnd)->m_pTheServer = new CDCServer( m_lptNibble );
+	ASSERT_KINDOF( CDCServer, ((CMainFrame*)m_pMainWnd)->m_pTheServer );
+	((CMainFrame*)m_pMainWnd)->m_pTheServer->ParseWorkDir( m_sStartingDir );
 	((CMainFrame*)m_pMainWnd)->OnStartTimer( CMainFrame::nTimerIdDetectGuest );
 
-	_OutputDebugString( "CJllServerApp>Leave App's InitInstance." );
+	_OutputDebugString( "CJllServerApp>Leave App's InitInstance.\n" );
 	return TRUE;
 }
 
@@ -262,11 +262,10 @@ void CJllServerApp::OnAppAbout()
 /////////////////////////////////////////////////////////////////////////////
 // CJllServerApp message handlers
 
-
 void CJllServerApp::OnFileNew() 
 {
 	// TODO: Add your command handler code here
-	_OutputDebugString( "theApp> ON FILE NEW." );
+	_OutputDebugString( "theApp> ON FILE NEW.\n" );
 	CWinApp::OnFileNew();
 }
 
@@ -274,9 +273,32 @@ void CJllServerApp::LoadProfileStrings()
 {
 	CString strSection    = "Jll Section";
 	CString strStringItem = "Starting Directory";
+	char szPath[ 1024 ];			// Buffer to hold path information
 
 	m_sStartingDir = GetProfileString( strSection, strStringItem, "C:\\" );
-}
+	if( ::SetCurrentDirectory( m_sStartingDir ) == FALSE )
+	{
+		::GetCurrentDirectory( sizeof szPath, szPath );
+		m_sStartingDir = szPath;
+	}
+
+/***** the following is not necessary for illegal path like "E:"
+	::SetCurrentDirectory returns ERROR_NOT_READY (device is not ready)
+	for this kind of error.
+
+	HANDLE hFile;					// Handle to found file
+	WIN32_FIND_DATA stFindData;		// Info about the found file
+
+	// First, see if there's anything in the directory
+	hFile = FindFirstFile( m_sStartingDir + "\\"_ALLFILES , &stFindData );
+	if( INVALID_HANDLE_VALUE == hFile )
+	{
+		::GetCurrentDirectory( sizeof szPath, szPath );
+		m_sStartingDir = szPath;
+	}
+	FindClose( hFile );
+********/
+ }
 
 void CJllServerApp::StoreProfileStrings()
 {
@@ -309,12 +331,4 @@ void CJllServerApp::FormatOutput( LPCTSTR lpszFormat, ... )
 	CString tempS;
 	pDoc->FormatOutputV( lpszFormat, argList );
 	va_end( argList );
-}
-
-int CJllServerApp::ExitInstance() 
-{
-	// TODO: Add your specialized code here and/or call the base class
-	if( m_pTheServer ) delete m_pTheServer;
-	m_pTheServer = 0;
-	return CWinApp::ExitInstance();
 }

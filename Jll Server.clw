@@ -2,28 +2,30 @@
 
 [General Info]
 Version=1
-LastClass=CNibbleModeProto
-LastTemplate=CStatic
+LastClass=CExceptDlg
+LastTemplate=CDialog
 NewFileInclude1=#include "stdafx.h"
 NewFileInclude2=#include "Jll Server.h"
 LastPage=0
 
-ClassCount=7
+ClassCount=8
 Class1=CJllServerApp
 Class2=CJllServerDoc
 Class3=CJllServerView
 Class4=CMainFrame
 
-ResourceCount=6
-Resource1=IDD_ABOUTBOX
+ResourceCount=7
+Resource1=IDR_MAINFRAME
 Class5=CAboutDlg
-Resource2=IDR_MAINFRAME
+Resource2=1536
 Resource3=IDD_DIALOGBAR (English (U.S.))
-Resource4=IDD_DIALOGBAR
+Resource4=IDD_ABOUTBOX
 Resource5=IDD_CHOOSEDIR_DIALOG (English (U.S.))
 Class6=CChooseDirDlg
 Class7=CNibbleModeProto
-Resource6=1536
+Class8=CExceptDlg
+Resource6=IDD_DIALOGBAR
+Resource7=IDD_EXCEPTBOX
 
 [CLS:CJllServerApp]
 Type=0
@@ -179,7 +181,7 @@ LastObject=CNibbleModeProto
 
 [DLG:1536]
 Type=1
-Class=?
+Class=CExceptDlg
 ControlCount=14
 Control1=1090,static,1073872896
 Control2=1152,edit,1082197120
@@ -195,4 +197,21 @@ Control11=IDOK,button,1342373889
 Control12=IDCANCEL,button,1342373888
 Control13=1038,button,1342373888
 Control14=1040,button,1342373891
+
+[CLS:CExceptDlg]
+Type=0
+HeaderFile=except.h
+ImplementationFile=_except.cpp
+BaseClass=CDialog
+LastObject=CExceptDlg
+Filter=D
+VirtualFilter=dWC
+
+[DLG:IDD_EXCEPTBOX]
+Type=1
+Class=CExceptDlg
+ControlCount=3
+Control1=IDOK,button,1342242817
+Control2=IDC_STATIC,static,1342177283
+Control3=IDC_EXCEPTEDIT,edit,1352730692
 

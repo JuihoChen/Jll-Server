@@ -17,13 +17,11 @@ public:
 		InvalidHandleValue,
 		IoControlError
 	};
-	
 	CPortTalk();
 	virtual ~CPortTalk();
 	int OpenPortTalk();
 	void ClosePortTalk();
 	int EnableIOPM(WORD wOffset);
-
 protected:
 	void StartPortTalkDriver();
 	HANDLE m_hPortTalk;

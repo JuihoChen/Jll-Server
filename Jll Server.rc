@@ -216,6 +216,17 @@ BEGIN
                     WS_TABSTOP,158,68,50,12
 END
 
+IDD_EXCEPTBOX DIALOG DISCARDABLE  0, 0, 187, 94
+STYLE DS_MODALFRAME | DS_CENTER | WS_CAPTION | WS_SYSMENU
+CAPTION "Exception from Jll Server"
+FONT 10, "System"
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,130,4,50,14
+    ICON            IDR_JLLSERTYPE,IDC_STATIC,7,4,20,20
+    EDITTEXT        IDC_EXCEPTEDIT,7,26,173,61,ES_MULTILINE | ES_AUTOVSCROLL | 
+                    ES_READONLY | WS_VSCROLL
+END
+
 
 #ifndef _MAC
 /////////////////////////////////////////////////////////////////////////////
@@ -282,6 +293,14 @@ BEGIN
     IDD_DIALOGBAR, DIALOG
     BEGIN
         RIGHTMARGIN, 364
+    END
+
+    IDD_EXCEPTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 180
+        TOPMARGIN, 4
+        BOTTOMMARGIN, 87
     END
 END
 #endif    // APSTUDIO_INVOKED

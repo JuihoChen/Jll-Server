@@ -9,6 +9,15 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#include "except.h"
+
+#define UWM_COMMU_LOOP	(WM_APP+10)		// Message to incicate Comm. Loop starts
+#define UWM_EXCEPT_BOX	(WM_APP+11)		// Message to popup a dialog for exception
+#define UWM_SERVER_END	(WM_APP+12)		// Message to indicate end of server thread
+#define UWM_ADD_STRING	(WM_APP+13)		// Message to add string to CJllServerDoc
+
+class CDCServer;
+
 class CMainFrame : public CFrameWnd
 {
 	DECLARE_DYNCREATE(CMainFrame)
@@ -22,6 +31,8 @@ public:
 		nTimerIdAll = -1,
 		nTimerIdDetectGuest = 1
 	};
+	CDCServer* m_pTheServer;
+	CExceptDlg m_ExceptDlg;
 
 // Operations
 public:
@@ -57,9 +68,17 @@ protected:
 	afx_msg void OnUpdateFileSave(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateFileSaveAs(CCmdUI* pCmdUI);
 	afx_msg void OnTimer(UINT nIDEvent);
+	afx_msg void OnClose();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
 };
+
+inline CMainFrame* GetMyMainFrame()
+{
+	CMainFrame* pFrame = (CMainFrame*)(GetMyApp()->m_pMainWnd);
+	ASSERT_KINDOF( CMainFrame, pFrame );
+	return (CMainFrame*)pFrame;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 

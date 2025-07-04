@@ -24,6 +24,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_UPDATE_COMMAND_UI(ID_FILE_SAVE, OnUpdateFileSave)
 	ON_UPDATE_COMMAND_UI(ID_FILE_SAVE_AS, OnUpdateFileSaveAs)
 	ON_WM_TIMER()
+	ON_WM_CLOSE()
 	//}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
@@ -41,13 +42,15 @@ static UINT indicators[] =
 CMainFrame::CMainFrame()
 {
 	// TODO: add member initialization code here
-	_OutputDebugString( "CMainFrame constructor..." );
+	_OutputDebugString( "CMainFrame constructor...\n" );
 
+	m_pTheServer = 0;
 	m_nTimerDetectGuest = 0;
 }
 
 CMainFrame::~CMainFrame()
 {
+	_OutputDebugString( "CMainFrame::Destructor called.\n" );
 }
 
 int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
@@ -86,7 +89,7 @@ BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 		return FALSE;
 	// TODO: Modify the Window class or styles here by modifying
 	//  the CREATESTRUCT cs
-	_OutputDebugString( "Main frame>PreCreateWindow." );
+	_OutputDebugString( "Main frame>PreCreateWindow.\n" );
 	///cs.style |= WS_VSCROLL;
 
 	return TRUE;
@@ -129,7 +132,7 @@ void CMainFrame::OnTimer(UINT nIDEvent)
 	switch( nIDEvent )
 	{
 	case nTimerIdDetectGuest:
-		MessageBeep(0xFFFFFFFF);  // Beep
+		MessageBeep( 0xFFFFFFFF );  // Beep
 
 		GetMyApp()->m_lptNibble.EnterIdleCondition();
 
@@ -139,8 +142,9 @@ void CMainFrame::OnTimer(UINT nIDEvent)
 		else
 		{
 			OnStopTimer( nTimerIdDetectGuest );
-			PostMessage( WM_USER_COMMLOOP );
-			GetMyApp()->m_pTheServer->Begin();
+	 		GetMyApp()->FormatOutput( "the Guest is detected..." );
+			GetActiveView()->GetDlgItem( IDC_BUTTON_FOR_DIR )->EnableWindow( FALSE );
+			m_pTheServer->Begin( this );
 		}
 		break;
 	}
@@ -152,6 +156,16 @@ BOOL CMainFrame::DestroyWindow()
 {
 	// TODO: Add your specialized code here and/or call the base class
 	OnStopTimer( nTimerIdAll );
+	if( m_pTheServer )
+	{
+		delete m_pTheServer;
+		m_pTheServer = 0;
+	}
+	if( m_ExceptDlg.m_hWnd )
+	{
+		m_ExceptDlg.DestroyWindow();
+///		m_ExceptDlg.m_hWnd = 0;
+	}
 	return CFrameWnd::DestroyWindow();
 }
 
@@ -175,7 +189,7 @@ UINT CMainFrame::OnStartTimer(UINT nIDEvent)
 
 	if( nTimer == 0 )
 	{
-		TRACE0( "JLL Server: cannot allocate timer resource." );
+		TRACE0( "JLL Server: cannot allocate timer resource.\n" );
 	}
 	return nTimer;
 }
@@ -208,11 +222,58 @@ void CMainFrame::OnStopTimer(UINT nIDEvent)
 BOOL CMainFrame::PreTranslateMessage(MSG* pMsg) 
 {
 	// TODO: Add your specialized code here and/or call the base class
-	if( WM_USER_COMMLOOP == pMsg->message )
+	switch( pMsg->message )
 	{
-		GetMyApp()->FormatOutput( "the Guest is detected..." );
+	case UWM_COMMU_LOOP:
+	case UWM_SERVER_END:
+	 	GetMyApp()->FormatOutput( "the Guest is disconnected..." );
+		GetActiveView()->GetDlgItem( IDC_BUTTON_FOR_DIR )->EnableWindow( TRUE );
+		OnStartTimer( nTimerIdDetectGuest );
+		return TRUE;
+
+	case UWM_EXCEPT_BOX:
+		if( m_ExceptDlg.m_hWnd ) {
+			m_ExceptDlg.Invalidate( TRUE );
+		}
+		else {
+			m_ExceptDlg.Create( IDD_EXCEPTBOX, this );
+		}
+		m_ExceptDlg.ShowWindow( SW_SHOW );
+		m_ExceptDlg.UpdateWindow();
+		return TRUE;
+
+	case UWM_ADD_STRING:
+		{
+			CString* ps = (CString*) pMsg->lParam;
+		 	GetMyApp()->FormatOutput( *ps );
+			delete ps;
+		}
 		return TRUE;
 	}
 
 	return CFrameWnd::PreTranslateMessage(pMsg);
+}
+
+void CMainFrame::OnClose() 
+{
+	// TODO: Add your message handler code here and/or call default
+	_OutputDebugString( "Main frame>OnClose.\n" );
+	
+	if( m_pTheServer->IsRunning() )
+	{
+		// Play the system exclamation sound.
+		MessageBeep( MB_ICONEXCLAMATION );
+		// Create the message box. If the user clicks the Yes button,
+		// destroy the main window. 
+		if(	IDOK != MessageBox(
+			"Server is still in connection with a Guest,\r\n"
+			"Still continue to exit?",
+			AfxGetAppName(),
+			MB_ICONQUESTION | MB_OKCANCEL | MB_OK ) )
+		{
+			return;
+		}
+	}
+
+	CFrameWnd::OnClose();
 }

@@ -3,11 +3,12 @@
 
 #include "stdafx.h"
 #include "Jll Server.h"
-
 #include "Jll ServerDoc.h"
 #include "Jll ServerView.h"
+#include "MainFrm.h"
 #include "dirpkr.h"
 #include "dlgs.h"
+#include "Direct.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -28,14 +29,14 @@ CJllServerView::CJllServerView()
 	//}}AFX_DATA_INIT
 
 	// TODO: add construction code here
-	_OutputDebugString( "View constructor..." );
+	_OutputDebugString( "View constructor...\n" );
 
 	m_sStartingFolder = GetMyApp()->m_sStartingDir;
 }
 
 CJllServerView::~CJllServerView()
 {
-	_OutputDebugString( "View destructor..." );
+	_OutputDebugString( "View destructor...\n" );
 
 	CJllServerApp* pApp = GetMyApp();
 
@@ -54,7 +55,7 @@ void CJllServerView::DoDataExchange(CDataExchange* pDX)
 	DDV_MaxChars(pDX, m_sStartingFolder, 256);
 	//}}AFX_DATA_MAP
 
-	_OutputDebugString( "View::DoDataExchange called." );
+	_OutputDebugString( "View::DoDataExchange called.\n" );
 }
 
 
@@ -91,7 +92,12 @@ CJllServerDoc* CJllServerView::GetDocument() // non-debug version is inline
 void CJllServerView::OnButtonForDir() 
 {
 	// TODO: Add your control notification handler code here
-	_OutputDebugString( "View::Button for Dir. called." );
+	_OutputDebugString( "View::Button for Dir. called.\n" );
+
+	// Disable timer to detect the guest temporarily.
+	CMainFrame* pFrame = (CMainFrame*)GetParent();
+	ASSERT_KINDOF( CMainFrame, pFrame );
+	pFrame->OnStopTimer( CMainFrame::nTimerIdDetectGuest );
 	
 	CMyFileDlg cfdlg(
 		FALSE,
@@ -123,11 +129,17 @@ void CJllServerView::OnButtonForDir()
 
 		if( m_sStartingFolder != cfdlg.m_ofn.lpstrFile )
 		{
+			m_sStartingFolder = cfdlg.m_ofn.lpstrFile;
 			GetDocument()->FormatOutput( "Starting Folder is changed." );
+
+			ASSERT_KINDOF( CDCServer, pFrame->m_pTheServer );
+			pFrame->m_pTheServer->ParseWorkDir( m_sStartingFolder );
 		}
-		m_sStartingFolder = cfdlg.m_ofn.lpstrFile;
 		UpdateData( FALSE );
     }
+
+	// Reenable timer to detect the guest after this Dialog.
+	pFrame->OnStartTimer( CMainFrame::nTimerIdDetectGuest );	
 /**************************************************
 	CChooseDirDlg dlg( m_szBackupDirs );
 	int nResponse = dlg.DoModal();
@@ -156,7 +168,7 @@ void CJllServerView::OnDraw(CDC* pDC)
 	ASSERT_VALID(pDoc);
 
 	// TODO: add draw code for native data here
-	_OutputDebugString( "View::OnDraw called." );
+///	_OutputDebugString( "View::OnDraw called.\n" );
 
 	CRect rect;
 	GetClientRect( &rect );
@@ -222,7 +234,7 @@ void CJllServerView::InvalidateForNewLine()
 
 void CJllServerView::OnInitialUpdate() 
 {
-	_OutputDebugString( "View::OnInitialUpdate called." );
+	_OutputDebugString( "View::OnInitialUpdate called.\n" );
 
 	// The OnInitialUpdate member function is called to perform one-time
 	// initialization of the view.
@@ -245,7 +257,7 @@ void CJllServerView::OnInitialUpdate()
 void CJllServerView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
 {
 	// TODO: Add your specialized code here and/or call the base class
-	_OutputDebugString( "View::OnUpdate called." );
+	_OutputDebugString( "View::OnUpdate called.\n" );
 
 	// Call SetScrollSizes when the view is about to be updated. Call it in your
 	// override of the OnUpdate member function to adjust scrolling characteristics.

@@ -16,13 +16,10 @@
 #include "PortTalk.h"	// Added by ClassView
 #include "parallel.h"	// Added by ClassView
 
-#define WM_USER_COMMLOOP	WM_USER+10	// Message to incicate Comm. Loop starts
-
 /////////////////////////////////////////////////////////////////////////////
 // CJllServerApp:
 // See Jll Server.cpp for the implementation of this class
 //
-class CDCServer;
 
 class CJllServerApp : public CWinApp
 {
@@ -35,14 +32,12 @@ public:
 
 	CString m_sStartingDir;
 	CNibbleModeProto m_lptNibble;
-	CDCServer* m_pTheServer;
 
 // Overrides
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(CJllServerApp)
 	public:
 	virtual BOOL InitInstance();
-	virtual int ExitInstance();
 	//}}AFX_VIRTUAL
 
 // Implementation

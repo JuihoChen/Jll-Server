@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /FAs /Yu"stdafx.h" /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /FAs /FR /Yu"stdafx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x404 /d "NDEBUG"
@@ -91,6 +91,14 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
+SOURCE=.\_Except.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\BArchive.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\Direct.cpp
 # End Source File
 # Begin Source File
@@ -119,6 +127,10 @@ SOURCE=.\MainFrm.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\Paralle2.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\Parallel.cpp
 # End Source File
 # Begin Source File
@@ -136,11 +148,19 @@ SOURCE=.\StdAfx.cpp
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
+SOURCE=.\BArchive.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\Direct.h
 # End Source File
 # Begin Source File
 
 SOURCE=.\DIRPKR.H
+# End Source File
+# Begin Source File
+
+SOURCE=.\Except.h
 # End Source File
 # Begin Source File
 
