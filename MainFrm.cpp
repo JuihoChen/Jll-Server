@@ -383,14 +383,11 @@ void CMainFrame::OnClose()
 	
 	if( m_pTheServer->IsRunning() )
 	{
-		// Play the system exclamation sound.
-		MessageBeep( MB_ICONEXCLAMATION );
-
 		// Create the message box. If the user clicks the Yes button,
 		// destroy the main window.
 		CString s = "Server is still in connection with a Guest,\r\n"
 					"Still continue to exit?";
-		if(	IDOK != MessageBox( s, AfxGetAppName(), MB_ICONQUESTION | MB_OKCANCEL | MB_OK ) )
+		if( IDOK != MessageBox( s, AfxGetAppName(), MB_ICONINFORMATION | MB_OKCANCEL | MB_OK ) )
 			return;
 	}
 

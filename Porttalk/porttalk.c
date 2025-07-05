@@ -15,7 +15,7 @@
 //
 //     V3.0   DEC 10, 2004   add internal ioctl to request allocates a parallel port
 //                           for exclusive access.
-//
+//     V3.1   DEC 28, 2004   get object pointer to "\\Device\\ParallelPort0" instead.
 
 #include <ntddk.h>
 #include "C:\WINDDK\2505\inc\ddk\wxp\parallel.h"
@@ -41,8 +41,8 @@ VOID PortTalkUnload(IN PDRIVER_OBJECT DriverObject);
 
 NTSTATUS TryGetObjectPointer( IN PDEVICE_EXTENSION DeviceExtension );
 NTSTATUS FreeObjectPointer( IN PDEVICE_EXTENSION DeviceExtension );
-NTSTATUS TryLockPortNoSelect( IN PDEVICE_EXTENSION DeviceExtension );
-NTSTATUS UnlockPortNoDeselect( IN PDEVICE_EXTENSION DeviceExtension );
+NTSTATUS TryAllocatePort( IN PDEVICE_EXTENSION DeviceExtension );
+NTSTATUS FreeParallelPort( IN PDEVICE_EXTENSION DeviceExtension );
 
 NTSTATUS PortTalkCreateDispatch(
     IN PDEVICE_OBJECT DeviceObject,
@@ -68,7 +68,7 @@ NTSTATUS DriverEntry(
 	WCHAR DOSNameBuffer[] = L"\\DosDevices\\PortTalk";
 	UNICODE_STRING uniNameString, uniDOSString;
 
-    KdPrint( ("PORTTALK: Porttalk V3.0 12/27/2004 has Loaded") );
+    KdPrint( ("PORTTALK: Porttalk V3.1 12/28/2004 has Loaded") );
 
     IOPM_local = MmAllocateNonCachedMemory( sizeof(IOPM) );
     if( IOPM_local == 0 ) return STATUS_INSUFFICIENT_RESOURCES;
@@ -77,8 +77,8 @@ NTSTATUS DriverEntry(
 
     KdPrint( ("PORTTALK: Memory Allocated at %X\n", IOPM_local) );
 
-    RtlInitUnicodeString(&uniNameString, NameBuffer);
-    RtlInitUnicodeString(&uniDOSString, DOSNameBuffer);
+    RtlInitUnicodeString( &uniNameString, NameBuffer );
+    RtlInitUnicodeString( &uniDOSString, DOSNameBuffer );
 
 	status = IoCreateDevice( DriverObject,
 							 sizeof( DEVICE_EXTENSION ), // DeviceExtensionSize
@@ -88,7 +88,7 @@ NTSTATUS DriverEntry(
 							 FALSE,
 							 &deviceObject );
 
-    if(!NT_SUCCESS(status))
+    if( !NT_SUCCESS(status) )
         return status;
 
 	DeviceExtension = (PDEVICE_EXTENSION)deviceObject->DeviceExtension;
@@ -96,9 +96,9 @@ NTSTATUS DriverEntry(
 	DeviceExtension->ipDeviceObject = NULL;
 	DeviceExtension->ipFileObject = NULL;
 
-    status = IoCreateSymbolicLink (&uniDOSString, &uniNameString);
+    status = IoCreateSymbolicLink( &uniDOSString, &uniNameString );
 
-    if (!NT_SUCCESS(status))
+    if( !NT_SUCCESS(status) )
         return status;
 
     DriverObject->MajorFunction[IRP_MJ_CREATE] = PortTalkCreateDispatch;
@@ -115,7 +115,7 @@ PortTalkDeviceControl(
     )
 
 {
-	PDEVICE_EXTENSION DeviceExtension = (PDEVICE_EXTENSION) DeviceObject->DeviceExtension;
+	PDEVICE_EXTENSION   DeviceExtension = (PDEVICE_EXTENSION) DeviceObject->DeviceExtension;
 	PIO_STACK_LOCATION  irpSp;
 	NTSTATUS            ntStatus = STATUS_SUCCESS;   
 
@@ -144,7 +144,7 @@ PortTalkDeviceControl(
     ShortBuffer = (PUSHORT) ioBuffer;
     LongBuffer  = (PULONG) ioBuffer;
 
-	switch ( irpSp->Parameters.DeviceIoControl.IoControlCode )
+	switch( irpSp->Parameters.DeviceIoControl.IoControlCode )
 	{
 	case IOCTL_IOPM_RESTRICT_ALL_ACCESS:
 
@@ -177,7 +177,6 @@ PortTalkDeviceControl(
 			ntStatus = STATUS_SUCCESS;
 		} else ntStatus = STATUS_BUFFER_TOO_SMALL;
 		pIrp->IoStatus.Information = 0; /* Output Buffer Size */
-		////ntStatus = STATUS_SUCCESS;
 		break;
 
 	case IOCTL_ENABLE_IOPM_ON_PROCESSID: 
@@ -194,7 +193,6 @@ PortTalkDeviceControl(
 			ntStatus = STATUS_SUCCESS;
 		} else ntStatus = STATUS_BUFFER_TOO_SMALL;
 		pIrp->IoStatus.Information = 0; /* Output Buffer Size */
-		////ntStatus = STATUS_SUCCESS;
 		break;
 
 	case IOCTL_READ_PORT_UCHAR:
@@ -207,7 +205,6 @@ PortTalkDeviceControl(
 			ntStatus = STATUS_SUCCESS;
 		} else ntStatus = STATUS_BUFFER_TOO_SMALL;
 		pIrp->IoStatus.Information = 1; /* Output Buffer Size */
-		////ntStatus = STATUS_SUCCESS;
 		break;
 
 	case IOCTL_WRITE_PORT_UCHAR:
@@ -218,12 +215,11 @@ PortTalkDeviceControl(
 			ntStatus = STATUS_SUCCESS;
 		} else ntStatus = STATUS_BUFFER_TOO_SMALL;
 		pIrp->IoStatus.Information = 0; /* Output Buffer Size */
-		////ntStatus = STATUS_SUCCESS;
 		break;
 
 	case IOCTL_PARALLEL_PORT_GET_DEVICE_OBJECT:
 
-		KdPrint( ("PORTTALK: Getting device object pointer to Parallel0.\n") );
+		KdPrint( ("PORTTALK: Getting device object pointer to Parallel Port.\n") );
 		ntStatus = STATUS_BUFFER_TOO_SMALL;
 		pIrp->IoStatus.Information = 0;
 		if( outBufLength >= sizeof( PFILE_OBJECT ) ) {
@@ -238,7 +234,7 @@ PortTalkDeviceControl(
 
 	case IOCTL_PARALLEL_PORT_FREE_DEVICE_OBJECT:
 
-		KdPrint( ("PORTTALK: Dereference device object pointer to Parallel0.\n") );
+		KdPrint( ("PORTTALK: Dereference device object pointer to Parallel Port.\n") );
 		ntStatus = FreeObjectPointer( DeviceExtension );
 		pIrp->IoStatus.Information = 0;
 		break;
@@ -246,14 +242,14 @@ PortTalkDeviceControl(
 	case IOCTL_PARALLEL_PORT_ALLOCATE:
 
 		KdPrint( ("PORTTALK: IOCTL_PARALLEL_PORT_ALLOCATE - allocate port\n") );
-		ntStatus = TryLockPortNoSelect( DeviceExtension );
+		ntStatus = TryAllocatePort( DeviceExtension );
 		pIrp->IoStatus.Information = 0;
 		break;
 
 	case IOCTL_PARALLEL_PORT_FREE:
 
 		KdPrint( ("PORTTALK: IOCTL_PARALLEL_PORT_FREE - free port\n") );
-		ntStatus = UnlockPortNoDeselect( DeviceExtension );
+		ntStatus = FreeParallelPort( DeviceExtension );
 		pIrp->IoStatus.Information = 0;
 		break;
 
@@ -280,9 +276,9 @@ VOID PortTalkUnload(IN PDRIVER_OBJECT DriverObject)
 
     if( DeviceExtension->IOPM_local )
 		MmFreeNonCachedMemory( DeviceExtension->IOPM_local, sizeof(IOPM) );
-    RtlInitUnicodeString(&uniDOSString, DOSNameBuffer);
-    IoDeleteSymbolicLink (&uniDOSString);
-    IoDeleteDevice(DriverObject->DeviceObject);
+    RtlInitUnicodeString( &uniDOSString, DOSNameBuffer );
+    IoDeleteSymbolicLink( &uniDOSString );
+    IoDeleteDevice( DriverObject->DeviceObject );
 }
 
 NTSTATUS TryGetObjectPointer( IN PDEVICE_EXTENSION DeviceExtension )
@@ -292,8 +288,8 @@ NTSTATUS TryGetObjectPointer( IN PDEVICE_EXTENSION DeviceExtension )
 	PDEVICE_OBJECT ipDeviceObject = NULL;
 	PFILE_OBJECT ipFileObject = NULL;
 
-	// first of all, we have to get a pointer to Parallel Device
-	RtlInitUnicodeString( &deviceName, L"\\Device\\Parallel0" );
+	// first of all, we have to get a pointer to Parallel Port
+	RtlInitUnicodeString( &deviceName, L"\\Device\\ParallelPort0" );
 	status = IoGetDeviceObjectPointer( &deviceName, STANDARD_RIGHTS_ALL, &ipFileObject, &ipDeviceObject );
 /*******
 	status = ObReferenceObjectByHandle(
@@ -317,7 +313,7 @@ NTSTATUS TryGetObjectPointer( IN PDEVICE_EXTENSION DeviceExtension )
 	return status;
 }
 
-NTSTATUS TryLockPortNoSelect( IN PDEVICE_EXTENSION DeviceExtension )
+NTSTATUS TryAllocatePort( IN PDEVICE_EXTENSION DeviceExtension )
 {
 	NTSTATUS status = STATUS_SUCCESS, waitStatus = STATUS_SUCCESS;
 	KEVENT event;
@@ -331,7 +327,7 @@ NTSTATUS TryLockPortNoSelect( IN PDEVICE_EXTENSION DeviceExtension )
 		KeInitializeEvent( &event, NotificationEvent, FALSE );
 
 		// we build the irp needed to establish fitler function
-		irp = IoBuildDeviceIoControlRequest( IOCTL_INTERNAL_LOCK_PORT_NO_SELECT,
+		irp = IoBuildDeviceIoControlRequest( IOCTL_INTERNAL_PARALLEL_PORT_ALLOCATE,
 			  							     DeviceExtension->ipDeviceObject,
 											 NULL, 0,
 											 NULL, 0,
@@ -390,7 +386,7 @@ NTSTATUS FreeObjectPointer( IN PDEVICE_EXTENSION DeviceExtension )
 	return STATUS_SUCCESS;
 }
 
-NTSTATUS UnlockPortNoDeselect( IN PDEVICE_EXTENSION DeviceExtension )
+NTSTATUS FreeParallelPort( IN PDEVICE_EXTENSION DeviceExtension )
 {
 	NTSTATUS status = STATUS_SUCCESS, waitStatus = STATUS_SUCCESS;
 	KEVENT event;
@@ -404,7 +400,7 @@ NTSTATUS UnlockPortNoDeselect( IN PDEVICE_EXTENSION DeviceExtension )
 		KeInitializeEvent( &event, NotificationEvent, FALSE );
 
 		// we build the irp needed to establish fitler function
-		irp = IoBuildDeviceIoControlRequest( IOCTL_INTERNAL_UNLOCK_PORT_NO_DESELECT,
+		irp = IoBuildDeviceIoControlRequest( IOCTL_INTERNAL_PARALLEL_PORT_FREE,
 			  							     DeviceExtension->ipDeviceObject,
 											 NULL, 0,
 											 NULL, 0,

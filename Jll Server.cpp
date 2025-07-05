@@ -28,6 +28,8 @@
 //     v0.19   DEC 06, 2004   use a different icon for SetIcon.
 //             DEC 09, 2004   allocate parallel port (parport.sys) via PortTalk driver.
 //             DEC 27, 2004   add option in menu to edit "DisableWarmPoll" registry setting.
+//     v0.20   DEC 28, 2004   make some decorations.
+//             DEC 31, 2004   fix bug editing "DisableWarmPoll" when missing key "Parameters".
 
 #include "stdafx.h"
 #include "Jll Server.h"
@@ -385,6 +387,20 @@ void CJllServerApp::OnEditDisablewarmpoll()
 
 	res = RegOpenKeyEx( HKEY_LOCAL_MACHINE, myKey, 0, KEY_WRITE, &phkResult );
 
+	if( res == ERROR_FILE_NOT_FOUND )
+	{
+		DWORD disposition;
+		res = RegCreateKeyEx( HKEY_LOCAL_MACHINE,		// handle to open key
+							  myKey,					// subkey name
+							  0,						// reserved
+							  0,						// class string
+							  REG_OPTION_NON_VOLATILE,	// special options
+							  KEY_ALL_ACCESS,			// desired security access
+							  0,						// inheritance
+							  &phkResult,				// key handle
+							  &disposition );			// disposition value buffer
+	}
+
 	res = RegSetValueEx(
 		phkResult,					// handle to key to query
 		"DisableWarmPoll",			// address of name of value to query
@@ -394,6 +410,10 @@ void CJllServerApp::OnEditDisablewarmpoll()
 		mySize );					// address of data buffer size
 
 	RegCloseKey( phkResult );
+
+	CString s = "To make this registry setting to take effect, "
+				"you have to restart the system.";
+	MessageBox( NULL, s, AfxGetAppName(), MB_ICONINFORMATION | MB_OK );
 }
 
 // MSDN: If an application has set a very short timer, or if the system is

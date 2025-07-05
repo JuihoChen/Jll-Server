@@ -137,7 +137,7 @@ BEGIN
         MENUITEM "複製(&C)\tCtrl+C",            ID_EDIT_COPY
         MENUITEM "貼上(&P)\tCtrl+V",            ID_EDIT_PASTE
         MENUITEM SEPARATOR
-        MENUITEM "DisableWarmPoll(&D)",         ID_EDIT_DISABLEWARMPOLL
+        MENUITEM "&DisableWarmPoll",            ID_EDIT_DISABLEWARMPOLL
     END
     POPUP "檢視(&V)"
     BEGIN
@@ -196,7 +196,7 @@ CAPTION "關於 Jll Server"
 FONT 9, "新細明體"
 BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,12,9,20,20
-    LTEXT           "Jll Server Version 0.19a",IDC_STATIC_VERSION,45,10,119,
+    LTEXT           "Jll Server Version 0.20a",IDC_STATIC_VERSION,45,10,119,
                     8,SS_NOPREFIX
     LTEXT           "Copyright (C) 2004",IDC_STATIC,45,25,119,8
     DEFPUSHBUTTON   "確定",IDOK,178,7,50,14,WS_GROUP
