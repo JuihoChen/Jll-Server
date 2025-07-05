@@ -74,6 +74,7 @@ void CBArchive::StoreFileName( const CString& rFullName )
 	/*!*/// Buffer has to be checked here to throw for release version!
 	if( m_fpBufCur >= m_fpBufMax )
 	{
+		RestorePosition();
 		TRACE( "Error: buffer archive overflows.\n" );
 		THROW( new CInfoException( CInfoException::BArchiveOverflow ) );
 	}
@@ -99,6 +100,18 @@ void CBArchive::StoreFileName( const CString& rFullName )
 		}
 	}
 
+	//*v0.25*
+	// We have to check for an exception (or a bug) for this file:
+	//   "C:\Program Files\Common Files\Symantec Shared\EENGINE\EraserUtilDrvI1.sys"
+	if( sFileName.GetLength() > 8 || sExt.GetLength() > 3 )
+	{
+		RestorePosition();
+		::OutputDebugString( "CInfoException::BadShortPathName -- " );
+		::OutputDebugString( (LPCSTR)(sFileName + "." + sExt) );
+		TRACE( "Error: erroneous \"shortpathname\" occurred.\n" );
+		THROW( new CInfoException( CInfoException::BadShortPathName ) );
+	}
+
 	memset( m_fpBufCur, 0, 11 );
 	memcpy( m_fpBufCur, sFileName, sFileName.GetLength() );
 	memcpy( m_fpBufCur + 8, sExt, sExt.GetLength() );
@@ -111,6 +124,8 @@ void CBArchive::WriteBObject( const CBObject* pBOb )
 	ASSERT_VALID( this );
 	ASSERT_VALID( pBOb );
 	ASSERT( IsStoring() );
+
+	RecordPosition();
 	((CBObject*) pBOb)->Serialize( *this );
 }
 
@@ -141,6 +156,7 @@ void CFileInfo::GetStatus( BOOL fTryNetpath /* = FALSE */)
 	// and we have to make operation on.... (v0.16)
 	WIN32_FIND_DATA findFileData;
 	HANDLE hFind = FindFirstFile( m_sFileName, &findFileData );
+
 	// pathname on network need wildcards to find!
 	if( hFind == INVALID_HANDLE_VALUE && fTryNetpath )
 	{
@@ -154,7 +170,7 @@ void CFileInfo::GetStatus( BOOL fTryNetpath /* = FALSE */)
 	VERIFY( FindClose( hFind ) );
 
 	// strip attribute of NORMAL bit, our API doesn't have a "normal" bit.
-	m_attribute = (BYTE) (findFileData.dwFileAttributes & ~FILE_ATTRIBUTE_NORMAL);
+	m_attribute = (BYTE) (findFileData.dwFileAttributes & ~FA_FATXX_DOESNT_SUPPORT_BITS);
 
 	// get just the low DWORD of the file size
 	ASSERT( findFileData.nFileSizeHigh == 0 );
@@ -216,6 +232,10 @@ void CFileInfo::Serialize( CBArchive& bar )
 		bar >> m_attribute
 			>> m_mtime;
 	}
+
+#ifdef _DEBUG
+	Dump( afxDump );
+#endif
 }
 
 BOOL CFileInfo::IsEqual( const CFileInfo& other ) const
@@ -271,7 +291,7 @@ void CFileInfo::Dump( CDumpContext& dc ) const
 	}
 
 	sTemp2.Format( "FileInfo: <filename> %s <filesize> %d\n"
-				   "          <attribute> %d <mtime> %s <%d>\n",
+				   "          <attribute> 0x%0x <mtime> %s <%d>\n",
 				   (LPCSTR) m_sFileName, m_size, m_attribute,
 				   (LPCSTR) sTemp1, mtime );
 	dc << sTemp2;

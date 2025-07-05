@@ -32,6 +32,15 @@
 //             DEC 31, 2004   fix bug editing "DisableWarmPoll" when missing key "Parameters".
 //     v0.21   FEB 03, 2005   use SHBrowseForFolder to pick the working directory.
 //     v0.22   APR 21, 2005   report error to Guest if pathname read/finding error.
+//     v0.23   AUG 26, 2005   find ACPI registry for parallel port address (for Woody's platform).
+//                            report error to Guest if access denied from system directory.
+//     v0.24   OCT 05, 2005   produce a custom caption animation to minimize to the system tray.
+//             OCT 11, 2005   try to open file with attributes that FATxx does not support.
+//                            (FILE_ATTRIBUTE_NOT_CONTENT_INDEXED) was not considered - bug!
+//     v0.25   APR 17, 2006   use theApp object instead of GetMyApp().
+//             MAR 22, 2007   fix bug of ShortPathName for cAlternateFileName field in
+//                            WIN32_FIND_DATA.
+//
 
 #include "stdafx.h"
 #include "Jll Server.h"

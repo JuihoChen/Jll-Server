@@ -105,7 +105,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;      // fail to create
 	}
 
-	OnDetectSpkOn( GetMyApp()->m_bDetectSpkOn ? ID_DETECT_SPK_ON : ID_DETECT_SPK_OFF );
+	OnDetectSpkOn( theApp.m_bDetectSpkOn ? ID_DETECT_SPK_ON : ID_DETECT_SPK_OFF );
 
 	// TODO: Delete these three lines if you don't want the toolbar to
 	//  be dockable
@@ -130,6 +130,9 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	aboutDlg.Create( IDD_ABOUTBOX, this );
 	aboutDlg.GetDlgItemText( IDC_STATIC_VERSION, sz );
 	aboutDlg.DestroyWindow();
+#ifdef _DEBUG
+	sz += " (DEBUG Version)";
+#endif
 	SetTitle( sz );
 
 	return 0;
@@ -226,18 +229,18 @@ void CMainFrame::OnTimer(UINT nIDEvent)
 	{
 	case nTimerIdDetectGuest:
 
-		if( GetMyApp()->m_bDetectSpkOn )
+		if( theApp.m_bDetectSpkOn )
 		{
 			MessageBeep( 0xFFFFFFFF );		// Beep
 		}
 
-		GetMyApp()->m_drvPortTalk.ParAllocPort();	// ask Parport.sys to allocate port
-		GetMyApp()->m_lptNibble.EnterIdleCondition();
+		theApp.m_drvPortTalk.ParAllocPort();	// ask Parport.sys to allocate port
+		theApp.m_lptNibble.EnterIdleCondition();
 
-		if( !GetMyApp()->m_lptNibble.DetectTheGuest() )
+		if( !theApp.m_lptNibble.DetectTheGuest() )
 		{
-			GetMyApp()->m_lptNibble.EnterIdleCondition();
-			GetMyApp()->m_drvPortTalk.ParFreePort();  // free parallel port from Parport.sys
+			theApp.m_lptNibble.EnterIdleCondition();
+			theApp.m_drvPortTalk.ParFreePort();  // free parallel port from Parport.sys
 		}
 		else
 		{
@@ -327,7 +330,7 @@ LRESULT CMainFrame::OnServerEndJob( WPARAM wParam, LPARAM lParam )
 {
 	FormatOutput( "the Guest is disconnected... %s", CTime::GetCurrentTime().Format( "at %H:%M:%S" ) );
 	GetActiveView()->EnableFolderChange( TRUE );
-	GetMyApp()->m_drvPortTalk.ParFreePort();	// free parallel port from Parport.sys
+	theApp.m_drvPortTalk.ParFreePort();	// free parallel port from Parport.sys
 ///v0.18***	StartTimer( nTimerIdDetectGuest );
 	m_cTrayIcon.ModifyIcon( m_hIconDisconnect, m_pTheServer->GetWorkDir() );
 	return 0;
@@ -415,12 +418,12 @@ void CMainFrame::OnDetectSpkOn(UINT nID)
 	if( nID == ID_DETECT_SPK_ON )
 	{
 		m_wndToolBar.SetButtonInfo( 10, ID_DETECT_SPK_OFF, TBBS_BUTTON, 9 );
-		GetMyApp()->m_bDetectSpkOn = 1;
+		theApp.m_bDetectSpkOn = 1;
 	}
 	else
 	{
 		m_wndToolBar.SetButtonInfo( 10, ID_DETECT_SPK_ON, TBBS_BUTTON, 8 );
-		GetMyApp()->m_bDetectSpkOn = 0;
+		theApp.m_bDetectSpkOn = 0;
 	}
 
 	// invalidate the call update handlers before painting
@@ -435,6 +438,8 @@ void CMainFrame::OnSysCommand(UINT nID, LPARAM lParam)
 	// operator to obtain the correct result.
 	if( (nID & 0xFFF0) == SC_MINIMIZE )
 	{
+		_OutputDebugString( "Main frame>SysCommand to Minimize.\n" );
+
 		HICON hIcon = m_pTheServer->IsRunning() ? m_hIconConnected : m_hIconDisconnect;
 		m_cTrayIcon.HideWindow( hIcon );
 	}

@@ -65,9 +65,11 @@ void CTrayIcon::RestoreWindow()
 {
 	m_bMinimizedToTray = FALSE;
 	DeleteIcon();
-	FromHandle()->ShowWindow(SW_SHOW);	///FromHandle()->ShowWindow( SW_NORMAL );
-	FromHandle()->ShowWindow(SW_RESTORE);
-	FromHandle()->SetForegroundWindow();
+// v0.24 *** produce a custom caption animation to maximize from the system tray.
+	RestoreWndFromTray( m_hWnd );
+//	FromHandle()->ShowWindow(SW_SHOW);	///FromHandle()->ShowWindow( SW_NORMAL );
+//	FromHandle()->ShowWindow(SW_RESTORE);
+//	FromHandle()->SetForegroundWindow();
 }
 
 void CTrayIcon::HideWindow(HICON hIcon /* = NULL */)
@@ -75,8 +77,10 @@ void CTrayIcon::HideWindow(HICON hIcon /* = NULL */)
 	m_bMinimizedToTray = TRUE;
 	if( AddIcon( hIcon ) )
 	{
-		FromHandle()->ShowWindow( SW_MINIMIZE );	// animate Minimize.
-		FromHandle()->ShowWindow( SW_HIDE );
+// v0.24 *** produce a custom caption animation to minimize to the system tray.
+		MinimizeWndToTray( m_hWnd );
+//		FromHandle()->ShowWindow( SW_MINIMIZE );	// animate Minimize.
+//		FromHandle()->ShowWindow( SW_HIDE );
 	}
 }
 

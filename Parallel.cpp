@@ -156,19 +156,14 @@ CNibbleModeProto::~CNibbleModeProto()
 *****/
 }
 
-LONG CNibbleModeProto::GetLptPortInTheRegistry( int myPort )
+LONG CNibbleModeProto::GetLptPortInTheRegistry( CString myKey, int myPort )
 {
 	HKEY phkResult;
-	CString myKey;
 	char myData[255];
 	LONG res;
 	DWORD mySize;
 	DWORD myType;
-         
-	res = GetParallelControllerKey( myKey );
-	if( res < 0 )
-		return (-1);
-         
+
 	sprintf( myData, "%s\\%d", (LPCSTR) myKey, myPort );
 	TRACE1( "key value for \"Configuration Data\" = %s\n", myData );
 
@@ -253,13 +248,137 @@ LONG CNibbleModeProto::GetParallelControllerKey( CString& rKey )
          
 						if( res == ERROR_SUCCESS ) // ERROR_SUCCESS 3
 						{
-							if( 0 == strcmp( myData, "ParallelController" ) )
+							if( 0 == stricmp( myData, "ParallelController" ) )
 							{
 								rKey = myKey2 + "\\" + myData;
 								return 0;
 							}
 						} // ERROR_SUCCESS 3
 					} // for (dwIndex3
+				} // // ERROR_SUCCESS 2
+			} // for (dwIndex2
+		} // ERROR_SUCCESS 1
+	} // for (dwIndex1
+         
+	return (-1);
+}
+
+LONG CNibbleModeProto::GetLptPortInACPI()
+{
+	HKEY hKey;
+	char myData[255];
+	LONG res;
+	DWORD mySize;
+	DWORD myType;
+	FILETIME ftLastWriteTime;
+
+	CString myKey;
+	myKey.Format( "SYSTEM\\CurrentControlSet\\Enum\\ACPI" );
+
+	res = RegOpenKeyEx( HKEY_LOCAL_MACHINE, myKey, 0, KEY_READ, &hKey );
+ 
+	if( res != ERROR_SUCCESS )
+		return (-1);
+
+	DWORD dwIndex1;
+	CString myKey1;
+	for( dwIndex1 = 0; dwIndex1 <= 20; dwIndex1 ++ )	// loop for ...ACPI\PNP0xxx
+	{
+		mySize = sizeof myData;
+		res = RegEnumKeyEx( hKey, dwIndex1, myData, &mySize, NULL, NULL, NULL, &ftLastWriteTime );
+         
+		if( res == ERROR_SUCCESS ) // ERROR_SUCCESS 1
+		{
+			myKey1 = myKey + "\\" + myData;
+         
+			HKEY hKey1;
+			res = RegOpenKeyEx( HKEY_LOCAL_MACHINE, myKey1, 0, KEY_READ, &hKey1 );
+ 
+			if( res != ERROR_SUCCESS )
+				return (-1);
+         
+			DWORD dwIndex2;
+			CString myKey2;
+			for( dwIndex2 = 0; dwIndex2 <= 10; dwIndex2 ++ )	// loop for ACPI\PNP0xxx\4&61f3b4b&0
+			{
+				mySize = sizeof myData;
+				res = RegEnumKeyEx( hKey1, dwIndex2, myData, &mySize, NULL, NULL, NULL, &ftLastWriteTime );
+         
+				if( res == ERROR_SUCCESS ) // ERROR_SUCCESS 2
+				{
+					myKey2 = myKey1 + "\\" + myData;
+         
+					HKEY hKey2;
+					res = RegOpenKeyEx( HKEY_LOCAL_MACHINE, myKey2, 0, KEY_READ, &hKey2 );
+         
+					if( res != ERROR_SUCCESS )
+						return (-1);
+         
+					/****************************************/
+					mySize = sizeof myData;
+					myType = REG_SZ;
+
+					res = RegQueryValueEx(
+							hKey2,			// handle to key to query
+							"Service",			// address of name of value to query
+							NULL,				// reserved
+							&myType,			// address of buffer for value type
+							(LPBYTE)myData,		// address of data buffer
+							&mySize	);			// address of data buffer size
+
+					if( res != ERROR_SUCCESS )
+						continue;
+
+					if( 0 != stricmp( myData, "Parport"  ) )
+						continue;
+
+					/****************************************/
+					CString myKey3 = myKey2 + "\\Device Parameters";
+
+					HKEY hKey3;
+					res = RegOpenKeyEx( HKEY_LOCAL_MACHINE, myKey3, 0, KEY_READ, &hKey3 );
+					if( res != ERROR_SUCCESS )
+						continue;
+
+					mySize = sizeof myData;
+					myType = REG_SZ;
+
+					res = RegQueryValueEx(
+						hKey3,				// handle to key to query
+						"PortName",			// address of name of value to query
+						NULL,				// reserved
+						&myType,			// address of buffer for value type
+						(LPBYTE)myData,		// address of data buffer
+						&mySize	);			// address of data buffer size
+
+					if( res != ERROR_SUCCESS )
+						continue;
+
+					if( 0 != stricmp( myData, "LPT1" ) )
+						continue;
+
+					/****************************************/
+					myKey3 = myKey2 + "\\Control";
+
+					res = RegOpenKeyEx( HKEY_LOCAL_MACHINE, myKey3, 0, KEY_READ, &hKey3 );
+					if( res != ERROR_SUCCESS )
+						continue;
+
+					mySize = sizeof myData;
+					myType = REG_SZ;
+
+					res = RegQueryValueEx(
+						hKey3,				// handle to key to query
+						"AllocConfig",		// address of name of value to query
+						NULL,				// reserved
+						&myType,			// address of buffer for value type
+						(LPBYTE)myData,		// address of data buffer
+						&mySize	);			// address of data buffer size
+
+					if( res == ERROR_SUCCESS )
+					{
+						return (myData[0x18] | (myData[0x19]<<8));
+					}
 				} // // ERROR_SUCCESS 2
 			} // for (dwIndex2
 		} // ERROR_SUCCESS 1
@@ -278,18 +397,31 @@ void CNibbleModeProto::AssertValid() const
 
 void CNibbleModeProto::Setup()
 {
+	CString myKey;
 	LONG res;
 
-	// Only LPT1 & LPT2 are tested against.
-	if( (res = GetLptPortInTheRegistry( 0 )) < 0 )
+	// Get Registry to HARDWARE\DESCRIPTION\System\...\ParallelController
+	res = GetParallelControllerKey( myKey );
+	if( res >= 0 )
 	{
-		if( (res = GetLptPortInTheRegistry(	1 )) < 0 )
+		// Only LPT1 & LPT2 are tested against.
+		if( (res = GetLptPortInTheRegistry( myKey, 0 )) < 0 )
 		{
-			return;
+			res = GetLptPortInTheRegistry(	myKey, 1 );
 		}
 	}
 
-	m_cParaport.SetBaseAddr( (WORD)res );
+	// Last try, Get Registry to SYSTEM\CurrentControlSet\Enum\ACPI\...\Control
+	if( res < 0 )
+	{
+		res = GetLptPortInACPI();
+	}
+
+	// Port address got to set?
+	if( res >= 0 )
+	{
+		m_cParaport.SetBaseAddr( (WORD)res );
+	}
 }
 
 #pragma check_stack( off )	// Turn off switch for code speed...

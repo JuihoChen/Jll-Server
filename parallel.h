@@ -65,7 +65,8 @@ public:
 	CNibbleModeProto();
 	virtual ~CNibbleModeProto();
 	LONG GetParallelControllerKey( CString& rKey );
-	LONG GetLptPortInTheRegistry( int myPort );
+	LONG GetLptPortInTheRegistry( CString myKey, int myPort );
+	LONG GetLptPortInACPI();
 	void Setup();
 	BOOL PortIsPresent() const;
 	WORD GetBaseAddr() const;

@@ -22,6 +22,8 @@ public:
 	void SetMouseMsgHandler(MouseMsgHandlerPtr *pMouseMsgHandler, int nHandlers);
 	void HideWindow(HICON hIcon = NULL);
 	void RestoreWindow();
+	void MinimizeWndToTray(HWND hWnd);
+	void RestoreWndFromTray(HWND hWnd);
 	CWnd* FromHandle() { return CWnd::FromHandle(m_hWnd); }
 	BOOL AddIcon(HICON hIcon);
 	BOOL DeleteIcon();

@@ -15,18 +15,18 @@ Class3=CJllServerView
 Class4=CMainFrame
 
 ResourceCount=8
-Resource1=IDD_FILEOPENORD
+Resource1=IDD_ABOUTBOX
 Class5=CAboutDlg
-Resource2=IDR_TASKBAR_MENU
+Resource2=IDD_DIALOGBAR
 Resource3=IDD_DIALOGBAR (English (U.S.))
-Resource4=IDD_ABOUTBOX
+Resource4=IDR_TASKBAR_MENU
 Resource5=IDD_CHOOSEDIR_DIALOG (English (U.S.))
 Class6=CChooseDirDlg
 Class7=CNibbleModeProto
 Class8=CExceptDlg
-Resource6=IDD_DIALOGBAR
+Resource6=IDR_MAINFRAME
 Class9=CButtonStyle
-Resource7=IDR_MAINFRAME
+Resource7=IDD_FILEOPENORD
 Class10=CFolderCombo
 Resource8=IDD_EXCEPTBOX
 
@@ -54,7 +54,7 @@ ImplementationFile=Jll ServerView.cpp
 Filter=W
 BaseClass=CFormView
 VirtualFilter=VWC
-LastObject=CJllServerView
+LastObject=IDC_BUTTON1
 
 
 [CLS:CMainFrame]

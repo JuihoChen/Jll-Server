@@ -77,10 +77,12 @@ public:
 protected:
 	void ReadBObject( CBObject* pBOb );
 	void WriteBObject( const CBObject* pBOb );
+	void RecordPosition() { m_fpOrig = m_fpBufCur; }
+	void RestorePosition() { m_fpBufCur = m_fpOrig; }
 
 private:
 	UINT m_nMode;
-	BYTE* m_fpBufCur;
+	BYTE* m_fpBufCur; BYTE* m_fpOrig;
 	BYTE* m_fpBufMax;
 	BYTE* m_fpBufStart;
 

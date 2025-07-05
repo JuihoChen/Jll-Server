@@ -18,7 +18,7 @@
 //     V3.1   DEC 28, 2004   get object pointer to "\\Device\\ParallelPort0" instead.
 
 #include <ntddk.h>
-#include "C:\WINDDK\2505\inc\ddk\wxp\parallel.h"
+#include "C:\WINDDK\3790.1830\inc\ddk\wxp\parallel.h"
 #include "..\porttalk_IOCTL.h"
 
 #define    IOPM_SIZE    0x2000
@@ -130,7 +130,8 @@ PortTalkDeviceControl(
 
     USHORT Offset;
     UCHAR Value;
- 
+    ULONG lValueL, lValueH;
+
     ULONG ProcessID;    
     struct _EPROCESS *Process;
 
@@ -251,6 +252,27 @@ PortTalkDeviceControl(
 		KdPrint( ("PORTTALK: IOCTL_PARALLEL_PORT_FREE - free port\n") );
 		ntStatus = FreeParallelPort( DeviceExtension );
 		pIrp->IoStatus.Information = 0;
+		break;
+
+	case IOCTL_PRIV_CMND_RDMSR:
+
+		KdPrint( ("PORTTALK: IOCTL_PRIV_CMND_RDMSR - execute priviledge command rdmsr\n") );
+		if ((inBufLength >= 4) && (outBufLength >= 8)) {
+			lValueL = LongBuffer[0];
+			KdPrint( ("PORTTALK: IOCTL_PRIV_CMND_RDMSR 0x%X\n", lValueL) );
+
+			_asm pushad
+			_asm mov ecx, lValueL
+			_asm rdmsr
+			_asm mov lValueL, eax
+			_asm mov lValueH, edx
+			_asm popad
+			
+			KdPrint( ("PORTTALK: Value Read %X : %X\n", lValueH, lValueL ) );
+			LongBuffer[0] = lValueL; LongBuffer[1] = lValueH;
+			ntStatus = STATUS_SUCCESS;
+		} else ntStatus = STATUS_BUFFER_TOO_SMALL;
+		pIrp->IoStatus.Information = 8; /* Output Buffer Size */
 		break;
 
 	default:

@@ -69,7 +69,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /Gz /W3 /Zi /Od /D "WIN32" /YX /FD /c
-# ADD CPP /nologo /Gz /MDd /W3 /GX /Z7 /Oi /Gy /I "$(ddkroot)\inc\ddk" /I "$(ddkroot)\inc" /D WIN32=100 /D "STD_CALL" /D CONDITION_HANDLING=1 /D NT_UP=1 /D NT_INST=0 /D _NT1X_=100 /D WINNT=1 /D _WIN32_WINNT=0x0400 /D WIN32_LEAN_AND_MEAN=1 /D DBG=1 /D DEVL=1 /D FPO=0 /D "_DEBUG" /D _DLL=1 /D _X86_=1 /D i386=1 /D "_AFXDLL" /FAcs /FR /YX /FD /Zel -cbstring /QIfdiv- /QIf /GF /c
+# ADD CPP /nologo /Gz /MDd /W3 /vmg /GX /Z7 /Oi /Gy /I "$(ddkroot)\inc\ddk" /I "$(ddkroot)\inc" /D WIN32=100 /D "STD_CALL" /D CONDITION_HANDLING=1 /D NT_UP=1 /D NT_INST=0 /D _NT1X_=100 /D WINNT=1 /D _WIN32_WINNT=0x0400 /D WIN32_LEAN_AND_MEAN=1 /D DBG=1 /D DEVL=1 /D FPO=0 /D "_DEBUG" /D _DLL=1 /D _X86_=1 /D i386=1 /D "_AFXDLL" /FAcs /FR /YX /FD /Zel -cbstring /QIfdiv- /QIf /GF /c
 # ADD BASE MTL /nologo /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x409
@@ -79,7 +79,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 /nologo /machine:IX86
-# ADD LINK32 C:\NTDDK\lib\i386\checked\int64.lib C:\NTDDK\lib\i386\checked\ntoskrnl.lib C:\NTDDK\lib\i386\checked\hal.lib /nologo /base:"0x10000" /version:4.0 /entry:"DriverEntry" /incremental:no /debug /debugtype:both /machine:IX86 /nodefaultlib /out:"Debug\PortTalk.sys" /libpath:"$(ddkroot)\libchk\i386" /libpath:"$(ddkroot)\lib\i386\checked" /driver /debug:notmapped,FULL /IGNORE:4001,4037,4039,4065,4078,4087,4089,4096 /MERGE:_PAGE=PAGE /MERGE:_TEXT=.text /SECTION:INIT,d /MERGE:.rdata=.text /FULLBUILD /RELEASE /FORCE:MULTIPLE /OPT:REF /OPTIDATA /align:0x20 /osversion:4.00 /subsystem:native,4.00 /OPT:REF /FORCE:MULTIPLE /RELEASE /optidata
+# ADD LINK32 C:\DDK\lib\i386\checked\int64.lib C:\DDK\lib\i386\checked\ntoskrnl.lib C:\DDK\lib\i386\checked\hal.lib /nologo /base:"0x10000" /version:4.0 /entry:"DriverEntry" /incremental:no /debug /debugtype:both /machine:IX86 /nodefaultlib /out:"Debug\PortTalk.sys" /libpath:"$(ddkroot)\libchk\i386" /libpath:"$(ddkroot)\lib\i386\checked" /driver /debug:notmapped,FULL /IGNORE:4001,4037,4039,4065,4078,4087,4089,4096 /MERGE:_PAGE=PAGE /MERGE:_TEXT=.text /SECTION:INIT,d /MERGE:.rdata=.text /FULLBUILD /RELEASE /FORCE:MULTIPLE /OPT:REF /OPTIDATA /align:0x20 /osversion:4.00 /subsystem:native,4.00 /OPT:REF /FORCE:MULTIPLE /RELEASE /optidata
 # SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
@@ -95,16 +95,16 @@ LINK32=link.exe
 
 SOURCE=.\PortTalk.c
 DEP_CPP_PORTT=\
-	"..\..\..\..\..\ntddk\inc\alpharef.h"\
-	"..\..\..\..\..\ntddk\inc\bugcodes.h"\
-	"..\..\..\..\..\ntddk\inc\exlevels.h"\
-	"..\..\..\..\..\ntddk\inc\ntddk.h"\
-	"..\..\..\..\..\ntddk\inc\ntddpar.h"\
-	"..\..\..\..\..\ntddk\inc\ntdef.h"\
-	"..\..\..\..\..\ntddk\inc\ntiologc.h"\
-	"..\..\..\..\..\ntddk\inc\ntpoapi.h"\
-	"..\..\..\..\..\ntddk\inc\ntstatus.h"\
-	"..\..\..\..\..\winddk\2505\inc\ddk\wxp\parallel.h"\
+	"..\..\..\..\..\ddk\inc\alpharef.h"\
+	"..\..\..\..\..\ddk\inc\bugcodes.h"\
+	"..\..\..\..\..\ddk\inc\exlevels.h"\
+	"..\..\..\..\..\ddk\inc\ntddk.h"\
+	"..\..\..\..\..\ddk\inc\ntddpar.h"\
+	"..\..\..\..\..\ddk\inc\ntdef.h"\
+	"..\..\..\..\..\ddk\inc\ntiologc.h"\
+	"..\..\..\..\..\ddk\inc\ntpoapi.h"\
+	"..\..\..\..\..\ddk\inc\ntstatus.h"\
+	"..\..\..\..\..\winddk\3790.1830\inc\ddk\wxp\parallel.h"\
 	"..\porttalk_ioctl.h"\
 	
 

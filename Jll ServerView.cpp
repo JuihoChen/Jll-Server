@@ -451,11 +451,11 @@ void CFolderCombo::Initialize()
 
 	// Must have CBS_DROPDOWNLIST style! but ModifyStyle doesn't work?
 
-	AddString( GetMyApp()->m_sStartingDir );
+	AddString( theApp.m_sStartingDir );
 
 	for( int i = 1; i < 10; i ++ )
 	{
-		CString sTemp = GetMyApp()->LoadProfileStrings( i );
+		CString sTemp = theApp.LoadProfileStrings( i );
 		if( !sTemp.IsEmpty() ) InsertString( GetCount(), sTemp );
 	}
 
@@ -474,10 +474,10 @@ void CFolderCombo::CleanUp()
 			{
 				CString sText;
 				GetLBText( i, sText );
-				GetMyApp()->StoreProfileStrings( i, sText );
+				theApp.StoreProfileStrings( i, sText );
 			}
 			else
-				GetMyApp()->StoreProfileStrings( i );
+				theApp.StoreProfileStrings( i );
 		}
 	}
 }

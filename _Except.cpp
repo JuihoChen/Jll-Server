@@ -69,6 +69,9 @@ void CInfoException::Handler() const
 	case InvalidFindFile:
 		sTemp = "InfoError: The network path was not found.\n";
 		break;
+	case DeniedAccess:
+		sTemp = "InfoError: file access is denied.\n";
+		break;
 	default:
 		sTemp.Format( "InfoError: erroneous status <%d> thrown!\n", m_nError );
         break;

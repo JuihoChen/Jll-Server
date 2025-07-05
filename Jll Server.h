@@ -53,12 +53,7 @@ public:
 	DECLARE_MESSAGE_MAP()
 };
 
-inline CJllServerApp* GetMyApp()
-{
-	CWinApp* pApp = AfxGetApp();
-	ASSERT_KINDOF( CJllServerApp, pApp );
-	return (CJllServerApp*)pApp;
-}
+extern CJllServerApp theApp;
 
 #ifdef _DEBUG
 #define _OutputDebugString(lpsz) ::OutputDebugString(lpsz)

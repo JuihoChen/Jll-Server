@@ -18,6 +18,11 @@
 #define  _PARENT_DIR	".."
 #define  _SELF_DIR		"."
 
+// *v0.24*  NTFS supports some file attributes that FATxx doesn't maintain. So these bits
+// have to be included to open files on disc. In the other hand, these bits have to be
+// excluded before the file attribute is to be transferred to the guest or to be compared.
+#define  FA_FATXX_DOESNT_SUPPORT_BITS	(FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_COMPRESSED | FILE_ATTRIBUTE_NOT_CONTENT_INDEXED)
+
 typedef	CTypedPtrArray<CObArray, CFileInfo*> tmplTOCARRAY;
 
 class CBArchive;

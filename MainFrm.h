@@ -101,9 +101,9 @@ protected:
 
 inline CMainFrame* GetMyMainFrame()
 {
-	CMainFrame* pFrame = (CMainFrame*)(GetMyApp()->m_pMainWnd);
+	CMainFrame* pFrame = (CMainFrame*)theApp.m_pMainWnd;
 	ASSERT_KINDOF( CMainFrame, pFrame );
-	return (CMainFrame*)pFrame;
+	return pFrame;
 }
 
 inline CJllServerView* CMainFrame::GetActiveView() const

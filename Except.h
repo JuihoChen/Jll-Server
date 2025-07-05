@@ -48,7 +48,9 @@ public:
 		FileIsDirAttributed,
 		BadFileCountInTOC,
 		BArchiveOverflow,
-		InvalidFindFile
+		InvalidFindFile,
+		DeniedAccess,
+		BadShortPathName
 	};
 	CInfoException( int nStatus ) : m_nError( nStatus ) {}
 	static LPCSTR TranslateCause( int nCause );

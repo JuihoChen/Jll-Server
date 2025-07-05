@@ -234,7 +234,6 @@ CDCServer::~CDCServer()
 	if( m_pThread && GetExitCodeThread( m_pThread->m_hThread, &dwExitCode ) &&
 		dwExitCode == STILL_ACTIVE )
 	{
-
 		KillThread();				// Kill the worker thread and await 500 ms.
 		WaitForSingleObject( m_hEventServerThreadKilled, 500 );
 
@@ -514,6 +513,24 @@ void CDCServer::ChangeDir()
 		// not going up for mother-dir (co's her name's "..")
 		if( m_fiInfo.m_sFileName != _PARENT_DIR )
 		{
+			//*v0.25* Check if we could touch directory like "System Volume Information".
+			CFileInfo fiDirCheck;
+			fiDirCheck.m_sFileName = ConcatDir( m_fiInfo.m_sFileName, _ALLFILES );
+			
+			TRY
+			{
+				fiDirCheck.GetStatus();
+			}
+			CATCH( CFileException, e )
+			{
+				TRACE( " ==> could not retrieve files inside this directory.\n" );
+
+				RetCheckStatus( NgFileException );
+				FormatOutput( "Error: <%s> could be a system-use path.", (LPCSTR) m_fiInfo.m_sFileName );
+				return;
+			}
+			END_CATCH		
+			
 			m_sDirName = m_fiInfo.m_sFileName;
 		}
 	}
@@ -539,6 +556,11 @@ _goSend:
 void CDCServer::SendTOC()
 {
 	ASSERT_VALID( this );
+
+	m_sTocDir = m_sDirName;
+	m_pTocAr = &m_aFiInfoBase;
+	ASSERT_KINDOF( CObArray, m_pTocAr );
+
 	CreateTOC( __min( GetWord( 6 ), BF_MAXLEN ) );		// pass TRUEed fResp!
 }
 
@@ -548,13 +570,6 @@ void CDCServer::SendTOC()
  
 void CDCServer::CreateTOC( WORD nAlloc, BOOL fResp /* = TRUE */)
 {
-	if( fResp )
-	{
-		m_sTocDir = m_sDirName;
-		m_pTocAr = &m_aFiInfoBase;
-	}
-	ASSERT_KINDOF( CObArray, m_pTocAr );
-
 	// limit buffer size so that TRY/CATCH will handle file count.
 	CBArchive bar( *this, CBArchive::store, nAlloc );
 	bar += 2;
@@ -574,10 +589,12 @@ void CDCServer::CreateTOC( WORD nAlloc, BOOL fResp /* = TRUE */)
 		if( INVALID_HANDLE_VALUE == hFile )
 		{
 			int dwError = GetLastError();
-			TRACE1( "FindFirstFile returned INVALID_HANDLE_VALUE - %d.\n", dwError );
+			TRACE1( "FindFirstFile returned INVALID_HANDLE_VALUE - <%d>.\n", dwError );
 
 			if( dwError == ERROR_BAD_NETPATH )
 				THROW( new CInfoException( CInfoException::InvalidFindFile ) );
+			else if( dwError == ERROR_ACCESS_DENIED )
+				THROW( new CInfoException( CInfoException::DeniedAccess ) );
 			else
 				AfxThrowFileException( CFileException::invalidFile, dwError );
 		}
@@ -606,7 +623,7 @@ void CDCServer::CreateTOC( WORD nAlloc, BOOL fResp /* = TRUE */)
 		// Next, loop through everything in the directory. If the found file
 		// is itself a matching file, add it to the list.
 		DWORD dwAttr = FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_HIDDEN |
-					FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_ARCHIVE | FILE_ATTRIBUTE_COMPRESSED;
+					FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_ARCHIVE | FA_FATXX_DOESNT_SUPPORT_BITS;
 		while( INVALID_HANDLE_VALUE != hFile )
 		{
 			if( (FindFileData.dwFileAttributes & dwAttr) && !(FindFileData.dwFileAttributes & ~dwAttr) )
@@ -622,23 +639,24 @@ void CDCServer::CreateTOC( WORD nAlloc, BOOL fResp /* = TRUE */)
 	}
 	CATCH( CInfoException, e )
 	{
-		if( e->GetError() == CInfoException::InvalidFindFile )
+		if( e->GetError() == CInfoException::InvalidFindFile || e->GetError() == CInfoException::DeniedAccess )
 		{
-			FormatOutput( "Error: caught an info. exception: bad network path." );
+			FormatOutput( "Error: caught an info. exception => bad network path or access denied." );
 			if( fResp )
 			{
 				RetCheckStatus( NgFileException );
 				return;
 			}
 			else
-				AfxThrowFileException( CFileException::invalidFile, ERROR_BAD_NETPATH );
+			{
+				///*v0.25***AfxThrowFileException( CFileException::invalidFile, ERROR_ACCESS_DENIED, __FILE__ );
+				::OutputDebugString( "Should have touched some untouchable folder...\n" );
+			}
 		}
-
-		TRACE( " ==> revise/fake bar pointer for checking.\n" );
-
-		// update pointer for error check in destructor,
-		//  and bar is no longer usable!
-		bar -= _FI_LEN;
+		else  // ==> e->GetError() == CInfoException::BArchiveOverflow
+		{
+			::OutputDebugString( " ==> revise/fake bar pointer for checking.\n" );
+		}
 	}
 	END_CATCH
 
@@ -666,7 +684,7 @@ void CDCServer::CreateTOC( WORD nAlloc, BOOL fResp /* = TRUE */)
 	(this->*m_pfnSendFromBuffer)( 2 + nCount * _FI_LEN );
 
 	// it should not be nothing got, we checked file counts in constrcutor.
-	ASSERT( m_pTocAr->GetSize() > 0 );
+	///*v0.25***ASSERT( m_pTocAr->GetSize() > 0 );
 }
 
 void CDCServer::AddIntoTOC( CBArchive& bar, WIN32_FIND_DATA* pFileData )
@@ -675,7 +693,7 @@ void CDCServer::AddIntoTOC( CBArchive& bar, WIN32_FIND_DATA* pFileData )
 	ASSERT_VALID( pFiInfo );
 
 	// strip attribute of NORMAL bit, our API doesn't have a "normal" bit.
-	pFiInfo->m_attribute = (BYTE) (pFileData->dwFileAttributes & ~FILE_ATTRIBUTE_NORMAL);
+	pFiInfo->m_attribute = (BYTE) (pFileData->dwFileAttributes & ~FA_FATXX_DOESNT_SUPPORT_BITS);
 
 	// get just the low DWORD of the file size
 	ASSERT( pFileData->nFileSizeHigh == 0 );
@@ -698,7 +716,12 @@ void CDCServer::AddIntoTOC( CBArchive& bar, WIN32_FIND_DATA* pFileData )
 	////v0.16//pFiInfo->m_mtime = CTime( pFileData->ftLastWriteTime );
 	pFiInfo->m_mtime = CTimeDos( date, time );
 
-	// cFileName member might contain a classic 8.3 filename format
+    /* v0.25 *
+	   If a file has a long file name, the complete name appears in the cFileName
+	   field, and the 8.3 format truncated version of the name appears in the
+	   cAlternateFileName field. Otherwise, cAlternateFileName is empty.
+	 */
+	// cFileName member should contain a classic 8.3 filename format
 	// if cAlternateFileName is empty.
 	pFiInfo->m_sFileName = pFileData->cAlternateFileName;
 	if( pFiInfo->m_sFileName.IsEmpty() )
@@ -712,9 +735,16 @@ void CDCServer::AddIntoTOC( CBArchive& bar, WIN32_FIND_DATA* pFileData )
 	}
 	CATCH( CInfoException, e )
 	{
-		TRACE( " ==> got it, delete allocated space and then rethrow.\n" );
-
+		//*v0.25*
+		// We have to check for an exception (or a bug) for this file:
+		//   "C:\Program Files\Common Files\Symantec Shared\EENGINE\EraserUtilDrvI1.sys"
 		delete pFiInfo;
+		if( e->GetError() == CInfoException::BadShortPathName )
+		{
+			return;
+		}
+		// else ==> e->GetError() == CInfoException::BArchiveOverflow
+		TRACE( " ==> got it, delete allocated space and then rethrow.\n" );
 		THROW_LAST();
 	}
 	END_CATCH
@@ -762,7 +792,17 @@ void CDCServer::SendSpecific()
 	{
 		m_pTocAr = new tmplTOCARRAY;
 		ASSERT_KINDOF( CObArray, m_pTocAr );
-		CreateTOC( nAllocLen, FALSE );		// send requested TOC
+		TRY		// *v0.25* Catch for rethrow after memory deletion...
+		{
+			CreateTOC( nAllocLen, FALSE );		// send requested TOC
+		}
+		CATCH_ALL( e )
+		{
+			DeleteBase( m_pTocAr );
+			delete m_pTocAr;
+			THROW_LAST();
+		}
+		END_CATCH_ALL
 		DeleteBase( m_pTocAr );
 		delete m_pTocAr;
 	}
@@ -844,7 +884,10 @@ UINT CDCServer::DoWork()
 				// of its time slice to any other thread of equal priority that
 				// is ready to run. If there are no other threads of equal
 				// priority ready to run, the function returns immediately.
-				::Sleep( 0 );
+				//::Sleep( 0 );
+				// We set 1 Millisecond here to relinquish time slice to threads
+				// with priority lower than THREAD_PRIORITY_NORMAL.
+				::Sleep( 1 );
 				continue;
 			}
 			// Set this thread's priority as high as reasonably possible to
@@ -887,6 +930,7 @@ UINT CDCServer::DoWork()
 
 			// Reset this thread's priority back to normal.
 			::SetThreadPriority( hCurrentThread, THREAD_PRIORITY_NORMAL );
+//			::SetThreadPriority( hCurrentThread, THREAD_PRIORITY_BELOW_NORMAL );
 		}
 		while( m_bRunning && (GetOpcode() != EndDCC) );
 	}

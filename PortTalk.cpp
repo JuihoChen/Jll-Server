@@ -138,6 +138,8 @@ int CPortTalk::EnableIOPM( WORD wOffset )
 	int iOffset;	// ATTENTION: iOffset holds 4 bytes
 	int fResult;
 	DWORD BytesReturned;
+	ULONG lv;
+	ULONGLONG llv;
 
 	// As one byte represents 8 port addresses and that most devices will use
 	// a bank of 8 or 16 addresses, you need not specify every port address,
@@ -171,6 +173,23 @@ int CPortTalk::EnableIOPM( WORD wOffset )
 		TRACE1( "CPortTalk: error %d occured enabling IOPM for process.\n", GetLastError() );
 		return IoControlError;
 	}
+
+	lv = 0x1b;
+	llv = 0;
+    fResult = DeviceIoControl(
+		m_hPortTalk,
+		IOCTL_PRIV_CMND_RDMSR,
+		&lv, 4,
+		&llv, 8,
+		&BytesReturned,
+		NULL );
+
+	if( !fResult )
+	{
+		TRACE1( "CPortTalk: error %d occured in reading rdmsr.\n", GetLastError() );
+		return IoControlError;
+	}
+	TRACE1( "CPortTalk: msr value = %I64X.\n", llv );
 
 	return Success;
 }

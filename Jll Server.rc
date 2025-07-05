@@ -196,7 +196,7 @@ CAPTION "關於 Jll Server"
 FONT 9, "新細明體"
 BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,12,9,20,20
-    LTEXT           "Jll Server Version 0.23",IDC_STATIC_VERSION,45,10,119,8,
+    LTEXT           "Jll Server Version 0.25",IDC_STATIC_VERSION,45,10,119,8,
                     SS_NOPREFIX
     LTEXT           "Copyright (C) 2004-2005",IDC_STATIC,45,25,119,8
     DEFPUSHBUTTON   "確定",IDOK,178,7,50,14,WS_GROUP
