@@ -69,6 +69,8 @@ void CMainFrame::FormatOutput( LPCTSTR lpszFormat, ... )
 
 int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
+	_OutputDebugString( "Main frame>OnCreate.\n" );
+
 	if (CFrameWnd::OnCreate(lpCreateStruct) == -1)
 		return -1;
 
@@ -94,16 +96,26 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	EnableDocking(CBRS_ALIGN_ANY);
 	DockControlBar(&m_wndToolBar);
 
+	// Put the version string in about box onto the frame title.
+	CString sz;
+	CDialog aboutDlg;
+	aboutDlg.Create( IDD_ABOUTBOX, this );
+	aboutDlg.GetDlgItemText( IDC_STATIC_VERSION, sz );
+	aboutDlg.DestroyWindow();
+	SetTitle( sz );
+	SetForegroundWindow();
+
 	return 0;
 }
 
 BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 {
+	_OutputDebugString( "Main frame>PreCreateWindow.\n" );
+
 	if( !CFrameWnd::PreCreateWindow(cs) )
 		return FALSE;
 	// TODO: Modify the Window class or styles here by modifying
 	//  the CREATESTRUCT cs
-	_OutputDebugString( "Main frame>PreCreateWindow.\n" );
 	///cs.style |= WS_VSCROLL;
 
 	return TRUE;
@@ -187,26 +199,28 @@ BOOL CMainFrame::DestroyWindow()
 
 UINT CMainFrame::OnStartTimer(UINT nIDEvent)
 {
-	UINT nTimer;
+	UINT nTimer = 0;
 
 	switch( nIDEvent )
 	{
 	case nTimerIdDetectGuest:
-		nTimer = m_nTimerDetectGuest = SetTimer( nTimerIdDetectGuest, 1000, NULL );
+		if( m_nTimerDetectGuest == 0)
+		{
+			nTimer = m_nTimerDetectGuest = SetTimer( nTimerIdDetectGuest, 1000, NULL );
+		}
 		break;
 	default:
-		nTimer = 0;
 		break;
 	}
 
 	// Timers are a limited global resource; therefore it is important
 	// that an application check the value returned by the SetTimer
 	// method to verify that a timer is actually available.
-
 	if( nTimer == 0 )
 	{
 		TRACE0( "JLL Server: cannot allocate timer resource.\n" );
 	}
+
 	return nTimer;
 }
 
@@ -222,6 +236,15 @@ void CMainFrame::OnStopTimer(UINT nIDEvent)
 		if( m_nTimerDetectGuest ) KillTimer( m_nTimerDetectGuest );
 		m_nTimerDetectGuest = 0;
 		break;
+	}
+}
+
+void CMainFrame::CheckReTimerToDetectGuest()
+{
+	if( !m_pTheServer->IsRunning() && m_nTimerDetectGuest == 0 )
+	{
+		// Reenable timer to detect the guest after this Dialog.
+		OnStartTimer( nTimerIdDetectGuest );	
 	}
 }
 

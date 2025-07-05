@@ -151,9 +151,11 @@ void CJllServerView::OnDraw(CDC* pDC)
 	// TODO: add draw code for native data here
 ///	_OutputDebugString( "View::OnDraw called.\n" );
 
-	CRect rect;
-	GetClientRect( &rect );
-    if( pDC->RectVisible( &rect ) )
+	///CRect rect;
+	///GetClientRect( &rect );
+
+    // this line below makes abnormal scrolling not to display some text.
+	///v0.16//if( pDC->RectVisible( &rect ) )
 	{
 		CStringList& rSlm = pDoc->m_slMessages;
 		if( !rSlm.IsEmpty() )
@@ -167,7 +169,7 @@ void CJllServerView::OnDraw(CDC* pDC)
 			// Iterate over whole list
 			while( pos != NULL )
 			{
-				pDC->TextOut( rect.left + 15, cY, rSlm.GetNext( pos ) );
+				pDC->TextOut( /*rect.left +*/ 15, cY, rSlm.GetNext( pos ) );
 				cY += m_nLineHeight;
 			}
 		}
@@ -181,6 +183,7 @@ void CJllServerView::InvalidateForNewLine()
 	CRect rect;
 	GetClientRect( &rect );
 
+#if 0  // method below won't erase background covered by a popup dialog!
 	Invalidate();
 
 	int nTop = m_nTopForText + nLines * m_nLineHeight;
@@ -190,19 +193,19 @@ void CJllServerView::InvalidateForNewLine()
 		rect.SetRect( rect.left, nTop, rect.right, rect.bottom );
 		ValidateRect( &rect );
 	}
-/**************************************************
+#else
 	rect.SetRect(
 		rect.left,
-		( nLines - 1 ) * m_nLineHeight,
+		0, //m_nTopForText,
 		rect.right,
 		m_nTopForText + nLines * m_nLineHeight
 	);
 
 	InvalidateRect( &rect );
-	///*!*
+
+	// UpdateWindow is needed for the text to be put onto screen.
 	UpdateWindow();
-	///*!*
-*****/
+#endif
 }
 
 void CJllServerView::OnInitialUpdate() 

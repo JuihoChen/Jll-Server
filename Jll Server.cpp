@@ -12,6 +12,11 @@
 //     v0.13   NOV 01, 2004   some fast-computers (like small tank) have to delay more.
 //     v0.14   NOV 03, 2004   debug the communication tie and add some new features.
 //     v0.15   NOV 05, 2004   realize m_nPollCounter as a counter instead of a flag.
+//     v0.16   NOV 08, 2004   found contention with some parallel interlink of XP.
+//             NOV 10, 2004   fix assertion caused by some old MS-DOS files.
+//                            fix for some text not displayed when scrolling bar acts.
+//                            add CRC feature to "Send Data" command.
+//             NOV 11, 2004   put the version string in about box onto the frame title.
 
 #include "stdafx.h"
 #include "Jll Server.h"
@@ -64,10 +69,9 @@ CJllServerApp theApp;
 BOOL CJllServerApp::InitInstance()
 {
 	// Check only running on WinXP/NT systems.
-	if (GetVersion() & 0x80000000)
+	if( GetVersion() & 0x80000000 )
 	{
-		MessageBoxA(
-			NULL,
+		MessageBox( NULL,
 			"This application is only allowed to be running on Windows XP or NT.",
 			AfxGetAppName(),
 			MB_ICONSTOP | MB_OK
@@ -80,8 +84,7 @@ BOOL CJllServerApp::InitInstance()
 
 	if( m_lptNibble.PortIsPresent() == FALSE )
 	{
-		MessageBoxA(
-			NULL,
+		MessageBox( NULL,
 			"This application needs a printer port on the system.",
 			AfxGetAppName(),
 			MB_ICONSTOP | MB_OK
@@ -124,16 +127,14 @@ BOOL CJllServerApp::InitInstance()
 	case CPortTalk::Success:
 		break;
 	case CPortTalk::InvalidHandleValue:
-		MessageBoxA(
-			NULL,
+		MessageBox( NULL,
 			"Couldn't access PortTalk Driver.",
 			AfxGetAppName(),
 			MB_ICONSTOP | MB_OK
 		);
 		return FALSE;
 	case CPortTalk::IoControlError:
-		MessageBoxA(
-			NULL,
+		MessageBox( NULL,
 			"Error in calling DeviceIoControl.",
 			AfxGetAppName(),
 			MB_ICONSTOP | MB_OK
@@ -187,8 +188,7 @@ BOOL CJllServerApp::InitInstance()
 
 	if( m_drvPortTalk.EnableIOPM( m_lptNibble.GetBaseAddr() ) != CPortTalk::Success )
 	{
-		MessageBoxA(
-			NULL,
+		MessageBox( NULL,
 			"Error in IPOM setting for process.",
 			AfxGetAppName(),
 			MB_ICONSTOP | MB_OK
@@ -297,6 +297,24 @@ void CJllServerApp::StoreProfileStrings()
 	ASSERT( bRet == TRUE );
 }
 
+// MSDN: If an application has set a very short timer, or if the system is
+// sending the WM_SYSTIMER message, then OnIdle will be called repeatedly,
+// and degrade performance.
+BOOL CJllServerApp::OnIdle(LONG lCount) 
+{
+///	TRACE1( "theApp::OnIdle> lCount = %d\n", lCount );
+
+	// as in most applications, we let the base class CWinApp::OnIdle complete
+	// its processing before you attempt any additional idle loop processing.
+	if( CWinApp::OnIdle( lCount ) )
+		return TRUE;
+
+	// Check to re-enable the timer for server if its is lost somehow.
+	GetMyMainFrame()->CheckReTimerToDetectGuest();
+
+	return FALSE;
+}
+
 //DEL void CJllServerApp::FormatOutput( LPCTSTR lpszFormat, ... )
 //DEL {
 //DEL 	// Find the document owned by this application.
@@ -319,3 +337,4 @@ void CJllServerApp::StoreProfileStrings()
 //DEL 	pDoc->FormatOutputV( lpszFormat, argList );
 //DEL 	va_end( argList );
 //DEL }
+

@@ -51,7 +51,7 @@ public:
 	enum {
 		b7_Lock = 0x80,
 
-		b7_CRC  = 0x80,
+		b7_NCRC = 0x80,
 		b6_CF   = 0x40,
 
 		b7_8Bit = 0x80,
@@ -65,6 +65,7 @@ protected:
 	void SendFromBufferInByte( UINT nLen ) const;
 	void ReceiveIntoBufferInByte( UINT nIndex, UINT nLen );
 	void FillBuffer( UINT nIndex, BYTE* src, UINT nLen );
+	WORD GetWord( UINT nIndex ) const;
 	void SetAt( UINT nIndex, WORD wElement );
 	void SetString( UINT nIndex, CString& rString );
 	void DeleteBase();
@@ -131,6 +132,8 @@ public:
 };
 
 
+inline WORD CDirectCable::GetWord( UINT nIndex ) const
+	{ ASSERT( nIndex >= 0 && nIndex <= BF_MAXLEN - 1 ); return *(WORD FAR*)(m_fpBuffer + nIndex); }
 inline void CDirectCable::SetAt( UINT nIndex, WORD wElement )
 	{ ASSERT( nIndex >= 0 && nIndex <= BF_MAXLEN - 1 ); *(WORD FAR*)(m_fpBuffer + nIndex) = wElement; }
 

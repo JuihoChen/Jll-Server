@@ -11,6 +11,8 @@
 #define IDC_BUTTON_FOR_DIR              1006
 #define IDC_EDIT_FOR_DIR                1008
 #define IDC_EXCEPTEDIT                  1009
+#define IDC_STATIC_GRP                  1010
+#define IDC_STATIC_VERSION              1011
 
 // Next default values for new objects
 // 
@@ -19,7 +21,7 @@
 #define _APS_3D_CONTROLS                     1
 #define _APS_NEXT_RESOURCE_VALUE        139
 #define _APS_NEXT_COMMAND_VALUE         32772
-#define _APS_NEXT_CONTROL_VALUE         1010
+#define _APS_NEXT_CONTROL_VALUE         1012
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

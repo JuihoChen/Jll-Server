@@ -73,10 +73,8 @@ int CPortTalk::OpenPortTalk()
     error = DeviceIoControl( 
 		m_hPortTalk,
 		IOCTL_IOPM_RESTRICT_ALL_ACCESS,
-		NULL,
-		0,
-		NULL,
-		0,
+		NULL, 0,						// no input buffer, so pass zero
+		NULL, 0,						// output buffer
 		&BytesReturned,
 		NULL
 	);
@@ -111,10 +109,8 @@ int CPortTalk::EnableIOPM( WORD wOffset )
     error = DeviceIoControl(
 		m_hPortTalk,
 		IOCTL_SET_IOPM,
-		&iOffset,
-		3,
-		NULL,
-		0,
+		&iOffset, 3,
+		NULL, 0,
 		&BytesReturned,
 		NULL
 	);
@@ -128,10 +124,8 @@ int CPortTalk::EnableIOPM( WORD wOffset )
     error = DeviceIoControl(
 		m_hPortTalk,
 		IOCTL_ENABLE_IOPM_ON_PROCESSID,
-		&m_dwProcessId,
-		4,
-		NULL,
-		0,
+		&m_dwProcessId, 4,
+		NULL, 0,
 		&BytesReturned,
 		NULL
 	);

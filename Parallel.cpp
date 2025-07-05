@@ -38,6 +38,22 @@ BOOL CParPort::TestPort()
 // In order, check for presence of ECP, EPP, SPP, and PS/2 port.
 // Update the information in the Port data.
 {
+	// Check if PRN driver found okay in the XP system?
+	HANDLE hLpt = CreateFile(
+		"\\\\.\\PRN",
+		GENERIC_READ | GENERIC_WRITE,
+		0,									// exclusive access 
+		NULL,
+		OPEN_EXISTING,
+		0,
+		NULL
+	);
+
+	if( hLpt == INVALID_HANDLE_VALUE )		// we can't open the LPT device
+		return FALSE;
+	else
+		CloseHandle( hLpt );				// we're done with the handle
+
 	// For easy case, ECP mode is assumed.
 	m_nPortType = ptECP;
 	m_nPortType |= ptICTL;

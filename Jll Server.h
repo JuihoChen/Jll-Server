@@ -37,6 +37,7 @@ public:
 	//{{AFX_VIRTUAL(CJllServerApp)
 	public:
 	virtual BOOL InitInstance();
+	virtual BOOL OnIdle(LONG lCount);
 	//}}AFX_VIRTUAL
 
 // Implementation

@@ -51,6 +51,7 @@ public:
 	void FormatOutput( LPCTSTR lpszFormat, ... );
 	UINT OnStartTimer(UINT nIDEvent);
 	void OnStopTimer(UINT nIDEvent);
+	void CheckReTimerToDetectGuest(); 
 	virtual ~CMainFrame();
 #ifdef _DEBUG
 	virtual void AssertValid() const;

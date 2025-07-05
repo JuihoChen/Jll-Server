@@ -6,52 +6,6 @@
 --------------------Configuration: Jll Server - Win32 Debug--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "C:\DOCUME~1\JUIHO_~1.PCP\LOCALS~1\Temp\RSPC8.tmp" with contents
-[
-/nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /FAs /Fa"Debug/" /FR"Debug/" /Fp"Debug/Jll Server.pch" /Yu"stdafx.h" /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
-"C:\Program Files\Microsoft Visual Studio\MyProjects\Jll Server\Jll ServerView.cpp"
-]
-Creating command line "cl.exe @C:\DOCUME~1\JUIHO_~1.PCP\LOCALS~1\Temp\RSPC8.tmp" 
-Creating temporary file "C:\DOCUME~1\JUIHO_~1.PCP\LOCALS~1\Temp\RSPC9.tmp" with contents
-[
-/nologo /subsystem:windows /incremental:yes /pdb:"Debug/Jll Server.pdb" /debug /machine:I386 /out:"Debug/Jll Server.exe" /pdbtype:sept 
-".\Debug\_Except.obj"
-".\Debug\BArchive.obj"
-".\Debug\Direct.obj"
-".\Debug\DIRPKR.OBJ"
-".\Debug\Jll Server.obj"
-".\Debug\Jll ServerDoc.obj"
-".\Debug\Jll ServerView.obj"
-".\Debug\MainFrm.obj"
-".\Debug\Paralle2.obj"
-".\Debug\Parallel.obj"
-".\Debug\PortTalk.obj"
-".\Debug\StdAfx.obj"
-".\Debug\Jll Server.res"
-]
-Creating command line "link.exe @C:\DOCUME~1\JUIHO_~1.PCP\LOCALS~1\Temp\RSPC9.tmp"
-<h3>Output Window</h3>
-Compiling...
-Jll ServerView.cpp
-Linking...
-Creating temporary file "C:\DOCUME~1\JUIHO_~1.PCP\LOCALS~1\Temp\RSPCA.tmp" with contents
-[
-/nologo /o"Debug/Jll Server.bsc" 
-".\Debug\StdAfx.sbr"
-".\Debug\_Except.sbr"
-".\Debug\BArchive.sbr"
-".\Debug\Direct.sbr"
-".\Debug\DIRPKR.SBR"
-".\Debug\Jll Server.sbr"
-".\Debug\Jll ServerDoc.sbr"
-".\Debug\Jll ServerView.sbr"
-".\Debug\MainFrm.sbr"
-".\Debug\Paralle2.sbr"
-".\Debug\Parallel.sbr"
-".\Debug\PortTalk.sbr"]
-Creating command line "bscmake.exe @C:\DOCUME~1\JUIHO_~1.PCP\LOCALS~1\Temp\RSPCA.tmp"
-Creating browse info file...
-<h3>Output Window</h3>
 
 
 

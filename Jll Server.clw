@@ -15,7 +15,7 @@ Class3=CJllServerView
 Class4=CMainFrame
 
 ResourceCount=7
-Resource1=IDD_DIALOGBAR
+Resource1=IDD_ABOUTBOX
 Class5=CAboutDlg
 Resource2=IDR_MAINFRAME
 Resource3=IDD_DIALOGBAR (English (U.S.))
@@ -24,7 +24,7 @@ Resource5=IDD_CHOOSEDIR_DIALOG (English (U.S.))
 Class6=CChooseDirDlg
 Class7=CNibbleModeProto
 Class8=CExceptDlg
-Resource6=IDD_ABOUTBOX
+Resource6=IDD_DIALOGBAR
 Resource7=IDD_EXCEPTBOX
 
 [CLS:CJllServerApp]
@@ -79,7 +79,7 @@ Type=1
 Class=CAboutDlg
 ControlCount=4
 Control1=IDC_STATIC,static,1342177283
-Control2=IDC_STATIC,static,1342308480
+Control2=IDC_STATIC_VERSION,static,1342308480
 Control3=IDC_STATIC,static,1342308352
 Control4=IDOK,button,1342373889
 
@@ -148,7 +148,7 @@ ControlCount=4
 Control1=IDC_BUTTON_FOR_DIR,button,1342245888
 Control2=IDC_EDIT_FOR_DIR,edit,1350633600
 Control3=IDC_STATIC,static,1342308864
-Control4=IDC_STATIC,button,1342308359
+Control4=IDC_STATIC_GRP,button,1342308359
 
 [DLG:IDD_CHOOSEDIR_DIALOG (English (U.S.))]
 Type=1

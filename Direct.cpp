@@ -317,7 +317,7 @@ void CDCServer::SendData()
 		return;
 	}
 
-	BYTE bAttribute = GetAt( 1 );			// b7:CRC b6:CF
+	BYTE bAttribute = GetAt( 1 );			// b7:NCRC b6:CF
 	DWORD dwStartAddress = GetDword( 2 );
 	WORD wTransferLen = GetWord( 6 );
 
@@ -336,9 +336,20 @@ void CDCServer::SendData()
 	nStickNo = (nStickNo + 1) & 0x3;
 	****************************************************************/
 
-	m_fiInfo.ReadFile( dwStartAddress, wTransferLen, *this );
+	if( bAttribute & b7_NCRC )				// CRC codeword not to be appended?
+	{
+		m_fiInfo.m_bUseCRC = FALSE;
+		m_fiInfo.ReadFile( dwStartAddress, wTransferLen, *this );
 
-	(this->*m_pfnSendFromBuffer)( wTransferLen );
+		(this->*m_pfnSendFromBuffer)( wTransferLen );
+	}
+	else									// Calculate CRC & append it!
+	{
+		m_fiInfo.m_bUseCRC = TRUE;
+		m_fiInfo.ReadFile( dwStartAddress, wTransferLen, *this );
+
+		(this->*m_pfnSendFromBuffer)( wTransferLen + 2 );
+	}
 
 	if( bAttribute & b6_CF )				// close file after data sent?
 	{
@@ -559,8 +570,22 @@ void CDCServer::AddIntoTOC( CBArchive& bar, WIN32_FIND_DATA* pFileData )
 	ASSERT( pFileData->nFileSizeHigh == 0 );
 	pFiInfo->m_size = (LONG) pFileData->nFileSizeLow;
 
+	// some old MS-DOS files incur system assertion!
+	// and we have to make operation on.... (v0.16)
+	// first convert file time (UTC time) to local time
+	FILETIME localTime;
+	WORD date, time;
+	if( !FileTimeToLocalFileTime( &pFileData->ftLastWriteTime, &localTime ) )
+	{
+		TRACE1( "FileTimeToLocalFileTime not successful - GetLastError = %d\n", GetLastError() );
+		date = time = 0;
+	}
+	else
+		FileTimeToDosDateTime( &localTime, &date, &time );
+
 	// convert times as appropriate
-	pFiInfo->m_mtime = CTime( pFileData->ftLastWriteTime );
+	////v0.16//pFiInfo->m_mtime = CTime( pFileData->ftLastWriteTime );
+	pFiInfo->m_mtime = CTimeDos( date, time );
 
 	// cFileName member might contain a classic 8.3 filename format
 	// if cAlternateFileName is empty.

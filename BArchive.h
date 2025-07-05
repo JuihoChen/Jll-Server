@@ -23,6 +23,7 @@ public:
 // Constructors
 	CTimeDos();
 	CTimeDos( const CTimeDos& timeSrc );
+	CTimeDos( WORD date, WORD time );
 // Attributes
 	LONG GetTime() const;
 // Operations
@@ -107,9 +108,10 @@ public:
 	CFileInfo& operator=( const CFileInfo& other );
 protected:
 	void GetStatus();
-	void SetStatus();
-	void WriteFile( DWORD dwStart, UINT nLen, CDirectCable& dcc );
+	///void SetStatus();
+	///void WriteFile( DWORD dwStart, UINT nLen, CDirectCable& dcc );
 	void ReadFile( DWORD dwStart, UINT nLen, CDirectCable& dcc );
+	UINT Get_CRC_CheckSum( PVOID pBuffer, ULONG ulSize );
 private:
 	CTimeDos m_mtime;				// data & time the file modified
 	LONG m_size;					// file size in bytes
@@ -117,6 +119,7 @@ private:
 	CString m_sFileName;			// string of file name
 	static CFile m_fiArchive;		// temp. file object for operation
 	static BOOL m_bFileInUse;		// indicator of file in transfer
+	static BOOL m_bUseCRC;			// indicator of CRC checking
 public:
 	// Override the Serialize function
 	virtual void Serialize( CBArchive& bar );
@@ -132,6 +135,8 @@ inline CTimeDos::CTimeDos()
 	{ }
 inline CTimeDos::CTimeDos( const CTimeDos& timeSrc )
 	{ m_time = timeSrc.m_time; }
+inline CTimeDos::CTimeDos( WORD date, WORD time )
+	{ m_wTime = time; m_wDate = date; }
 inline const CTimeDos& CTimeDos::operator=( const CTimeDos& timeSrc )
 	{ m_time = timeSrc.m_time; return *this; }
 inline const CTimeDos& CTimeDos::operator=( DWORD mtime )
