@@ -132,10 +132,11 @@ void CJllServerView::OnButtonForDir()
 			m_sStartingFolder = cfdlg.m_ofn.lpstrFile;
 			GetDocument()->FormatOutput( "Starting Folder is changed." );
 
-			ASSERT_KINDOF( CDCServer, pFrame->m_pTheServer );
-			pFrame->m_pTheServer->ParseWorkDir( m_sStartingFolder );
 		}
 		UpdateData( FALSE );
+		// Update directory name in CDCServer class anyway.
+		ASSERT_KINDOF( CDCServer, pFrame->m_pTheServer );
+		pFrame->m_pTheServer->ParseWorkDir( m_sStartingFolder );
     }
 
 	// Reenable timer to detect the guest after this Dialog.

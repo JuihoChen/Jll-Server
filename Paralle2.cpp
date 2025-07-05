@@ -116,15 +116,12 @@ void CNibbleModeProto::WriteByteToPortInByte( WORD wWordToWrite ) const
 	_outp( rwBase + 2, bByteToWrite >> 4 );		// High Nibble
 	_outp( rwBase, (bByteToWrite & 0xf) | oSTROBE_VAL );
 
-	if( m_nPollCounter )
-	{
-		//***JHC* Wait the peripheral responds by setting S6=1. *JHC***
-		//NOTICE: experimental result...
-		//   In transients between CDB & Status nibble in command phase,
-		//   a polling for not being busy is necessary as below.
-		while( (_inp( rwBase + 1 ) & iBUSY_VAL) != 0x0 )
-			;
-	}
+	//***JHC* Wait the peripheral responds by setting S6=1. *JHC***
+	//NOTICE: experimental result...
+	//   In transients between CDB & Status nibble in command phase,
+	//   a polling for not being busy is necessary as below.
+	while( ((CNibbleModeProto*)this)->CheckForPolling() && (_inp( rwBase + 1 ) & iBUSY_VAL) != 0x0 )
+		;
 
 #else //WWW
 	// When S6=1 (not busy), write the low nibble and set D3=0.
@@ -148,16 +145,13 @@ void CNibbleModeProto::WriteByteToPortInByte( WORD wWordToWrite ) const
 	m_cParaport.rawControlPortWrite( bByteToWrite >> 4 );	// High Nibble
 	m_cParaport.WriteDataPort( (bByteToWrite & 0xf) | oSTROBE_VAL );
 
-	if( m_nPollCounter )
+	//***JHC* Wait the peripheral responds by setting S6=1. *JHC***
+	//NOTICE: experimental result...
+	//   In transients between CDB & Status nibble in command phase,
+	//   a polling for not being busy is necessary as below.
+	while( ((CNibbleModeProto*)this)->CheckForPolling() && (m_cParaport.ReadStatusPort() & iBUSY_VAL) == 0x0 )
 	{
-		//***JHC* Wait the peripheral responds by setting S6=1. *JHC***
-		//NOTICE: experimental result...
-		//   In transients between CDB & Status nibble in command phase,
-		//   a polling for not being busy is necessary as below.
-		while( (m_cParaport.ReadStatusPort() & iBUSY_VAL) == 0x0 )
-		{
-//			tmrWaitS6.CheckTimeout();	// use TRY/CATCH mechanism
-		}
+//		tmrWaitS6.CheckTimeout();		// use TRY/CATCH mechanism
 	}
 #endif
 #undef WWW

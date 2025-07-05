@@ -11,6 +11,7 @@
 //     v0.12   NOV 01, 2004   complete XP-DOS communication, and keep on debugging.
 //     v0.13   NOV 01, 2004   some fast-computers (like small tank) have to delay more.
 //     v0.14   NOV 03, 2004   debug the communication tie and add some new features.
+//     v0.15   NOV 05, 2004   realize m_nPollCounter as a counter instead of a flag.
 
 #include "stdafx.h"
 #include "Jll Server.h"

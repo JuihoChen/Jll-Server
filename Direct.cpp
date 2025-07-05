@@ -58,7 +58,7 @@ void CDirectCable::SendFromBuffer( UINT nLen ) const
 		m_rNibbleModeDev.WriteByteToPort( m_fpBuffer[ n ] );
 	}
 
-	m_rNibbleModeDev.SetPollCounter( 1 );
+	m_rNibbleModeDev.SetPollCounter( 500 );
 	m_rNibbleModeDev.WriteByteToPort( m_fpBuffer[ n ] );
 }
 
@@ -93,7 +93,7 @@ void CDirectCable::SendFromBufferInByte( UINT nLen ) const
 		m_rNibbleModeDev.WriteByteToPortInByte( *(WORD FAR*)(m_fpBuffer +n) );
 	}
 
-	m_rNibbleModeDev.SetPollCounter( 1 );
+	m_rNibbleModeDev.SetPollCounter( 500 );
 	m_rNibbleModeDev.WriteByteToPortInByte( *(WORD FAR*)(m_fpBuffer + n) );
 }
 
@@ -642,18 +642,13 @@ UINT CDCServer::DoWork()
 
 	do
 	{
-		// A value of zero causes the thread to relinquish the remainder of
-		// its time slice to any other thread of equal priority that is ready
-		// to run. If there are no other threads of equal priority ready to
-		// run, the function returns immediately.
-		::Sleep( 0 );
 		if( m_rNibbleModeDev.WatchForIncoming() == FALSE )
 		{
-//Del			// A value of zero causes the thread to relinquish the remainder of
-//Del			// its time slice to any other thread of equal priority that is ready
-//Del			// to run. If there are no other threads of equal priority ready to
-//Del			// run, the function returns immediately.
-//Del			::Sleep( 0 );
+			// A value of zero causes the thread to relinquish the remainder of
+			// its time slice to any other thread of equal priority that is ready
+			// to run. If there are no other threads of equal priority ready to
+			// run, the function returns immediately.
+			::Sleep( 0 );
 			continue;
 		}
 		// Set this thread's priority as high as reasonably possible to

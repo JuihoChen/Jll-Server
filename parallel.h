@@ -81,7 +81,8 @@ public:
 	void MakeControl4Input() const;
 	WORD ReadByteFromPortInByte();
 	void WriteByteToPortInByte( WORD wWordToWrite ) const;
-	void SetPollCounter( int nCount );
+	void SetPollCounter( int nCount = 0 );
+	BOOL CheckForPolling();
 private:
 	CParPort m_cParaport;
 	int m_nPollCounter;
@@ -121,7 +122,9 @@ inline BOOL CNibbleModeProto::PortIsPresent() const
 	{ ASSERT_VALID( this ); return (m_cParaport.GetPorType() != CParPort::ptNONE); }
 inline WORD CNibbleModeProto::GetBaseAddr() const
 	{ ASSERT_VALID( this ); return m_cParaport.GetBaseAddr(); }
-inline void CNibbleModeProto::SetPollCounter( int nCount )
+inline void CNibbleModeProto::SetPollCounter( int nCount /* = 0 */)
 	{ ASSERT_VALID( this ); m_nPollCounter = nCount; }
+inline BOOL CNibbleModeProto::CheckForPolling()
+	{ return m_nPollCounter ? m_nPollCounter -- : 0; }
 
 #endif // !defined(AFX_PARALLEL_H__E896C809_C0DA_4158_823F_FA4851EB0527__INCLUDED_)
