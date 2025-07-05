@@ -10,6 +10,7 @@
 //     v0.11   OCT 22, 2004   create a worker thread (background) as the Server.
 //     v0.12   NOV 01, 2004   complete XP-DOS communication, and keep on debugging.
 //     v0.13   NOV 01, 2004   some fast-computers (like small tank) have to delay more.
+//     v0.14   NOV 03, 2004   debug the communication tie and add some new features.
 
 #include "stdafx.h"
 #include "Jll Server.h"
@@ -183,8 +184,6 @@ BOOL CJllServerApp::InitInstance()
 
 	_OutputDebugString( "CJllServerApp>Before MainWnd's Show.\n" );
 
-	FormatOutput( "Found a printer port on 0x%x in the registry.", m_lptNibble.GetBaseAddr() );
-
 	if( m_drvPortTalk.EnableIOPM( m_lptNibble.GetBaseAddr() ) != CPortTalk::Success )
 	{
 		MessageBoxA(
@@ -199,6 +198,9 @@ BOOL CJllServerApp::InitInstance()
 	// The one and only window has been initialized, so show and update it.
 	m_pMainWnd->ShowWindow(SW_SHOW);
 	m_pMainWnd->UpdateWindow();
+
+	((CMainFrame*)m_pMainWnd)->FormatOutput(
+		"Found a printer port on 0x%x in the registry.", m_lptNibble.GetBaseAddr() );
 
 	((CMainFrame*)m_pMainWnd)->m_pTheServer = new CDCServer( m_lptNibble );
 	ASSERT_KINDOF( CDCServer, ((CMainFrame*)m_pMainWnd)->m_pTheServer );
@@ -294,26 +296,25 @@ void CJllServerApp::StoreProfileStrings()
 	ASSERT( bRet == TRUE );
 }
 
-void CJllServerApp::FormatOutput( LPCTSTR lpszFormat, ... )
-{
-	// Find the document owned by this application.
-/********
-	POSITION pos = m_pDocManager->GetFirstDocTemplatePosition();
-	ASSERT( pos );
-	CDocTemplate* pTemplate = m_pDocManager->GetNextDocTemplate( pos );
-	ASSERT_KINDOF( CSingleDocTemplate, pTemplate );
-	pos = pTemplate->GetFirstDocPosition();
-	ASSERT( pos );
-	CJllServerDoc* pDoc = (CJllServerDoc*)pTemplate->GetNextDoc( pos );
-	ASSERT_KINDOF( CJllServerDoc, pDoc );
-*/
-	CJllServerDoc* pDoc = (CJllServerDoc*)((CFrameWnd*)m_pMainWnd)->GetActiveDocument();
-	ASSERT_KINDOF( CJllServerDoc, pDoc );
-
-	ASSERT( AfxIsValidString( lpszFormat ) );
-	va_list argList;
-	va_start( argList, lpszFormat );
-	CString tempS;
-	pDoc->FormatOutputV( lpszFormat, argList );
-	va_end( argList );
-}
+//DEL void CJllServerApp::FormatOutput( LPCTSTR lpszFormat, ... )
+//DEL {
+//DEL 	// Find the document owned by this application.
+//DEL /********
+//DEL 	POSITION pos = m_pDocManager->GetFirstDocTemplatePosition();
+//DEL 	ASSERT( pos );
+//DEL 	CDocTemplate* pTemplate = m_pDocManager->GetNextDocTemplate( pos );
+//DEL 	ASSERT_KINDOF( CSingleDocTemplate, pTemplate );
+//DEL 	pos = pTemplate->GetFirstDocPosition();
+//DEL 	ASSERT( pos );
+//DEL 	CJllServerDoc* pDoc = (CJllServerDoc*)pTemplate->GetNextDoc( pos );
+//DEL 	ASSERT_KINDOF( CJllServerDoc, pDoc );
+//DEL */
+//DEL 	CJllServerDoc* pDoc = (CJllServerDoc*)((CFrameWnd*)m_pMainWnd)->GetActiveDocument();
+//DEL 	ASSERT_KINDOF( CJllServerDoc, pDoc );
+//DEL 
+//DEL 	ASSERT( AfxIsValidString( lpszFormat ) );
+//DEL 	va_list argList;
+//DEL 	va_start( argList, lpszFormat );
+//DEL 	pDoc->FormatOutputV( lpszFormat, argList );
+//DEL 	va_end( argList );
+//DEL }

@@ -120,7 +120,7 @@ void CJllServerDoc::FormatOutputV( LPCTSTR lpszFormat, va_list argList )
 	POSITION pos = GetFirstViewPosition();
 	CJllServerView* pFirstView = (CJllServerView*)( GetNextView( pos ) );
 
-	if( m_slMessages.GetCount() <= 20 )
+	if( m_slMessages.GetCount() <= pFirstView->GetLinesInView() )
 		pFirstView->InvalidateForNewLine();
 
 	else

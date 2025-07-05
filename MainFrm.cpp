@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "Jll Server.h"
 #include "MainFrm.h"
+#include "Jll ServerDoc.h"
 #include "direct.h"
 #include <conio.h>
 
@@ -51,6 +52,19 @@ CMainFrame::CMainFrame()
 CMainFrame::~CMainFrame()
 {
 	_OutputDebugString( "CMainFrame::Destructor called.\n" );
+}
+
+void CMainFrame::FormatOutput( LPCTSTR lpszFormat, ... )
+{
+	// Find the document owned by this application.
+	CJllServerDoc* pDoc = (CJllServerDoc*)GetActiveDocument();
+	ASSERT_KINDOF( CJllServerDoc, pDoc );
+
+	ASSERT( AfxIsValidString( lpszFormat ) );
+	va_list argList;
+	va_start( argList, lpszFormat );
+	pDoc->FormatOutputV( lpszFormat, argList );
+	va_end( argList );
 }
 
 int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
@@ -143,7 +157,8 @@ void CMainFrame::OnTimer(UINT nIDEvent)
 		else
 		{
 			OnStopTimer( nTimerIdDetectGuest );
-	 		GetMyApp()->FormatOutput( "the Guest is detected..." );
+	 		FormatOutput( "the Guest is detected... %s",
+				CTime::GetCurrentTime().Format( "at %H:%M:%S on %A, %B %d, %Y" ) );
 			GetActiveView()->GetDlgItem( IDC_BUTTON_FOR_DIR )->EnableWindow( FALSE );
 			m_pTheServer->Begin( this );
 		}
@@ -227,7 +242,8 @@ BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
 	{
 	case UWM_COMMU_LOOP:
 	case UWM_SERVER_END:
-	 	GetMyApp()->FormatOutput( "the Guest is disconnected..." );
+	 	FormatOutput( "the Guest is disconnected... %s",
+			CTime::GetCurrentTime().Format( "at %H:%M:%S" ) );
 		GetActiveView()->GetDlgItem( IDC_BUTTON_FOR_DIR )->EnableWindow( TRUE );
 		OnStartTimer( nTimerIdDetectGuest );
 		return TRUE;
@@ -247,7 +263,7 @@ BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
 	case UWM_ADD_STRING:
 		{
 			CString* ps = (CString*) pMsg->lParam;
-		 	GetMyApp()->FormatOutput( *ps );
+		 	FormatOutput( *ps );
 			delete ps;
 		}
 		return TRUE;

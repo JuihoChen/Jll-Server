@@ -112,7 +112,7 @@ protected:
 	EOpCode GetOpcode() const;
 	void InvalidateOpcode();
 	void ReceiveCommand();
-	void RetCheckStatus( EStatus nStatus );
+	void RetCheckStatus( int nStatus );
 	void AddIntoTOC( CBArchive& bar, WIN32_FIND_DATA* pFileData );
 	void FormatOutput( LPCTSTR lpszFormat, ... );
 protected:

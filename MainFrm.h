@@ -48,6 +48,7 @@ public:
 
 // Implementation
 public:
+	void FormatOutput( LPCTSTR lpszFormat, ... );
 	UINT OnStartTimer(UINT nIDEvent);
 	void OnStopTimer(UINT nIDEvent);
 	virtual ~CMainFrame();

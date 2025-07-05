@@ -19,9 +19,9 @@
 
 class CJllServerView : public CFormView
 {
+	DECLARE_DYNCREATE(CJllServerView)
 protected:
 	CJllServerView();           // protected constructor used by dynamic creation
-	DECLARE_DYNCREATE(CJllServerView)
 
 // Form Data
 public:
@@ -37,6 +37,7 @@ public:
 public:
 	void InvalidateForNewLine();
 	CJllServerDoc* GetDocument();
+	int GetLinesInView() const { return m_nNumLines; }
 
 // Overrides
 	// ClassWizard generated virtual function overrides
@@ -62,6 +63,10 @@ protected:
 	afx_msg void OnButtonForDir();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
+private:
+	int m_nTopForText;
+	int m_nLineHeight;
+	int m_nNumLines;
 };
 
 #ifndef _DEBUG  // debug version in Jll ServerView.cpp

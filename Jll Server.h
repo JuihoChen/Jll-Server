@@ -25,7 +25,6 @@ class CJllServerApp : public CWinApp
 {
 	DECLARE_DYNCREATE(CJllServerApp)
 public:
-	void FormatOutput(LPCTSTR lpszFormat, ...);
 	void StoreProfileStrings();
 	void LoadProfileStrings();
 	CJllServerApp();

@@ -199,12 +199,16 @@ void CDCServer::ReceiveCommand()
 {
 	ASSERT_VALID( this );
 
-	m_tmrWaitS6.SetTimer( 5000, "R:> " );		// turn on the timer
-
 	InvalidateOpcode();							// Invalidate Opcode
+
+	m_tmrWaitS6.SetTimer( 5000, "R:> " );		// turn on the timer
 
 	for( int i = 0; i < sizeof( m_bCDB ); i ++ )
 	{
+		char sz[10];
+		sprintf( sz, "R%1.1d:> ", i );
+		m_tmrWaitS6.SetMsghdr( sz );			// change message header
+
 /** these 2 lines below is replaced with for speeding up. ***
 ///        m_rNibbleModeDev.ReadByteFromPort( m_tmrWaitS6 );
 ///        m_bCDB[ i ] = m_rNibbleModeDev.GetByteRead();
@@ -215,7 +219,7 @@ void CDCServer::ReceiveCommand()
 	ASSERT( m_bCDB[0] != IllegalOpcode );
 }
 
-void CDCServer::RetCheckStatus( EStatus nStatus )
+void CDCServer::RetCheckStatus( int nStatus )
 {
 	ASSERT_VALID( this );
 	ASSERT( m_tmrWaitS6.m_fEnabled == TRUE );	// the timer was turned on
@@ -285,6 +289,11 @@ void CDCServer::SendFileInfo()
 	}
 
 	RetCheckStatus( OkStatus );
+
+	FormatOutput( "Transferring file info. <%s> %s",
+		(const char*)((CFileInfo*)(m_aFiInfoBase[ nIndex ]))->m_sFileName,
+		CTime::GetCurrentTime().Format( "at %H:%M:%S" )
+	);
 
 	m_fiInfo.m_bFileInUse = TRUE;			// set indicator for proper sequence
 
@@ -629,17 +638,22 @@ void CDCServer::FormatOutput( LPCTSTR lpszFormat, ... )
 
 UINT CDCServer::DoWork()
 {
-	InvalidateOpcode();							// Invalidate Opcode
+	InvalidateOpcode();				// Invalidate Opcode
 
 	do
 	{
+		// A value of zero causes the thread to relinquish the remainder of
+		// its time slice to any other thread of equal priority that is ready
+		// to run. If there are no other threads of equal priority ready to
+		// run, the function returns immediately.
+		::Sleep( 0 );
 		if( m_rNibbleModeDev.WatchForIncoming() == FALSE )
 		{
-			// A value of zero causes the thread to relinquish the remainder of
-			// its time slice to any other thread of equal priority that is ready
-			// to run. If there are no other threads of equal priority ready to
-			// run, the function returns immediately.
-			::Sleep( 0 );
+//Del			// A value of zero causes the thread to relinquish the remainder of
+//Del			// its time slice to any other thread of equal priority that is ready
+//Del			// to run. If there are no other threads of equal priority ready to
+//Del			// run, the function returns immediately.
+//Del			::Sleep( 0 );
 			continue;
 		}
 		// Set this thread's priority as high as reasonably possible to

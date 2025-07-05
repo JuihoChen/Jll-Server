@@ -154,23 +154,20 @@ void CJllServerView::OnDraw(CDC* pDC)
 	GetClientRect( &rect );
     if( pDC->RectVisible( &rect ) )
 	{
-		CStringList& rSlm = GetDocument()->m_slMessages;
+		CStringList& rSlm = pDoc->m_slMessages;
 		if( !rSlm.IsEmpty() )
 		{
-			TEXTMETRIC tm;
-
 			pDC->SetTextAlign( TA_BASELINE );
-			pDC->GetTextMetrics( &tm );
 
 			// Start at front of list
 			POSITION pos = rSlm.GetHeadPosition();
-			int cY = 80;
+			int cY = m_nTopForText;
 
 			// Iterate over whole list
 			while( pos != NULL )
 			{
 				pDC->TextOut( rect.left + 15, cY, rSlm.GetNext( pos ) );
-				cY += tm.tmHeight + 2;
+				cY += m_nLineHeight;
 			}
 		}
 	}
@@ -178,11 +175,6 @@ void CJllServerView::OnDraw(CDC* pDC)
 
 void CJllServerView::InvalidateForNewLine()
 {
-	CPaintDC dc( this );
-	OnPrepareDC( &dc );
-	TEXTMETRIC tm;
-	dc.GetTextMetrics( &tm );
-
 	int nLines = GetDocument()->m_slMessages.GetCount();
 
 	CRect rect;
@@ -190,7 +182,7 @@ void CJllServerView::InvalidateForNewLine()
 
 	Invalidate();
 
-	int nTop = 80 + nLines * ( tm.tmHeight + 2 );
+	int nTop = m_nTopForText + nLines * m_nLineHeight;
 
 	if( nTop < rect.bottom )
 	{
@@ -200,9 +192,9 @@ void CJllServerView::InvalidateForNewLine()
 /**************************************************
 	rect.SetRect(
 		rect.left,
-		( nLines - 1 ) * ( tm.tmHeight + 2 ),
+		( nLines - 1 ) * m_nLineHeight,
 		rect.right,
-		80 + nLines * ( tm.tmHeight + 2 )
+		m_nTopForText + nLines * m_nLineHeight
 	);
 
 	InvalidateRect( &rect );
@@ -232,6 +224,22 @@ void CJllServerView::OnInitialUpdate()
 	//GetParentFrame()->RecalcLayout();
 	//SetScaleToFitSize( CSize( 734, 450 ) );
 	////SetScaleToFitSize( GetTotalSize() );
+
+	CRect edtrect;
+	GetDlgItem( IDC_BUTTON_FOR_DIR )->GetClientRect( &edtrect );
+
+	TEXTMETRIC tm;
+	CPaintDC dc( this );
+	OnPrepareDC( &dc );
+	dc.GetTextMetrics( &tm );
+
+	CRect rect;							// the initial rect. It's variable!
+	GetClientRect( &rect );
+
+	m_nTopForText = edtrect.bottom * 3 - 4;
+	m_nLineHeight = tm.tmHeight + 2;
+	m_nNumLines = (rect.bottom - m_nTopForText) / m_nLineHeight - 3;
+	if( m_nNumLines < 20 ) m_nNumLines = 20;
 }
 
 void CJllServerView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 

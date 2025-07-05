@@ -72,10 +72,10 @@ public:
 	BOOL DetectTheGuest() const;
 	void EnterIdleCondition() const;
 	BOOL WatchForIncoming() const;
-	BYTE ReadNibbleFromPort( CTimer& tmrWaitS6 );
+	///BYTE ReadNibbleFromPort( CTimer& tmrWaitS6 );
 	void WriteNibbleToPort( BYTE bNibbleToWrite, CTimer& tmrWaitS6 ) const;
 	BYTE ReadByteFromPort( CTimer& tmrWaitS6 );
-	void WriteByteToPort( BYTE bByteToWrite, CTimer& tmrWaitS6 ) const;
+	///void WriteByteToPort( BYTE bByteToWrite, CTimer& tmrWaitS6 ) const;
 	BYTE ReadByteFromPort();
 	void WriteByteToPort( BYTE bByteToWrite ) const;
 	void MakeControl4Input() const;
