@@ -85,6 +85,7 @@ protected:
 	afx_msg void OnClose();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnTaskbarMenuShow();
+	afx_msg void OnUpdateEditDisablewarmpoll(CCmdUI* pCmdUI);
 	//}}AFX_MSG
 	afx_msg void OnUpdatePercentDone(CCmdUI* pCmdUI);
 	afx_msg void OnDetectSpkOn(UINT nID);

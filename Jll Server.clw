@@ -15,18 +15,18 @@ Class3=CJllServerView
 Class4=CMainFrame
 
 ResourceCount=8
-Resource1=IDR_MAINFRAME
+Resource1=IDD_FILEOPENORD
 Class5=CAboutDlg
-Resource2=IDD_FILEOPENORD
+Resource2=IDR_TASKBAR_MENU
 Resource3=IDD_DIALOGBAR (English (U.S.))
-Resource4=IDD_DIALOGBAR
+Resource4=IDD_ABOUTBOX
 Resource5=IDD_CHOOSEDIR_DIALOG (English (U.S.))
 Class6=CChooseDirDlg
 Class7=CNibbleModeProto
 Class8=CExceptDlg
-Resource6=IDR_TASKBAR_MENU
+Resource6=IDR_MAINFRAME
 Class9=CButtonStyle
-Resource7=IDD_ABOUTBOX
+Resource7=IDD_DIALOGBAR
 Resource8=IDD_EXCEPTBOX
 
 [CLS:CJllServerApp]
@@ -99,10 +99,11 @@ Command7=ID_EDIT_UNDO
 Command8=ID_EDIT_CUT
 Command9=ID_EDIT_COPY
 Command10=ID_EDIT_PASTE
-Command11=ID_VIEW_TOOLBAR
-Command12=ID_VIEW_STATUS_BAR
-Command13=ID_APP_ABOUT
-CommandCount=13
+Command11=ID_EDIT_DISABLEWARMPOLL
+Command12=ID_VIEW_TOOLBAR
+Command13=ID_VIEW_STATUS_BAR
+Command14=ID_APP_ABOUT
+CommandCount=14
 
 [ACL:IDR_MAINFRAME]
 Type=1

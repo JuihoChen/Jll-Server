@@ -136,6 +136,8 @@ BEGIN
         MENUITEM "剪下(&T)\tCtrl+X",            ID_EDIT_CUT
         MENUITEM "複製(&C)\tCtrl+C",            ID_EDIT_COPY
         MENUITEM "貼上(&P)\tCtrl+V",            ID_EDIT_PASTE
+        MENUITEM SEPARATOR
+        MENUITEM "DisableWarmPoll(&D)",         ID_EDIT_DISABLEWARMPOLL
     END
     POPUP "檢視(&V)"
     BEGIN
@@ -154,7 +156,7 @@ BEGIN
     BEGIN
         MENUITEM "關於 Jll Server(&A)...",      ID_APP_ABOUT
         MENUITEM SEPARATOR
-        MENUITEM "關啟(&O)",                    IDR_TASKBAR_MENU_SHOW
+        MENUITEM "開啟(&O)",                    IDR_TASKBAR_MENU_SHOW
         MENUITEM "結束(&X)",                    ID_APP_EXIT
     END
 END
@@ -194,8 +196,8 @@ CAPTION "關於 Jll Server"
 FONT 9, "新細明體"
 BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,12,9,20,20
-    LTEXT           "Jll Server Version 0.18",IDC_STATIC_VERSION,45,10,119,8,
-                    SS_NOPREFIX
+    LTEXT           "Jll Server Version 0.19a",IDC_STATIC_VERSION,45,10,119,
+                    8,SS_NOPREFIX
     LTEXT           "Copyright (C) 2004",IDC_STATIC,45,25,119,8
     DEFPUSHBUTTON   "確定",IDOK,178,7,50,14,WS_GROUP
 END
@@ -467,6 +469,11 @@ END
 STRINGTABLE DISCARDABLE 
 BEGIN
     IDR_TASKBAR_MENU_SHOW   "恢復原視窗顯示"
+END
+
+STRINGTABLE DISCARDABLE 
+BEGIN
+    ID_EDIT_DISABLEWARMPOLL "修改機碼 HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\Parport\\Parameters"
 END
 
 #endif    // Chinese (Taiwan) resources

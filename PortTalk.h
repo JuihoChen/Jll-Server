@@ -15,18 +15,23 @@ public:
 	enum {
 		Success = 0,
 		InvalidHandleValue,
-		IoControlError
+		IoControlError,
+		InvalidHandleLPT1
 	};
 	CPortTalk();
 	virtual ~CPortTalk();
 	int OpenPortTalk();
 	void ClosePortTalk();
 	int EnableIOPM(WORD wOffset);
+	void ParAllocPort();
+	void ParFreePort();
 protected:
-	void StartPortTalkDriver();
+	void StartPortTalkDriver() const;
+	BOOL InstallPortTalkDriver() const;
+	DWORD m_dwProcessId;
+	UINT m_nAllocPortCounter;
 	HANDLE m_hPortTalk;
 	HANDLE m_hLPT1;
-	DWORD m_dwProcessId;
 };
 
 #endif // !defined(AFX_PORTTALK_H__FA21F7FE_D3F8_4D8A_B5C8_C6B3C5BDBF85__INCLUDED_)

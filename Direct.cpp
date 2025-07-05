@@ -818,7 +818,7 @@ UINT CDCServer::ThreadProc( LPVOID pObj )
 {
 	CDCServer* pJob = (CDCServer*)pObj;
 	ASSERT_KINDOF( CDCServer, pJob );
-	return pJob->DoWork();				// ..and return error code to Windows
+	return pJob->DoWork();				// return error code to Windows
 }
 
 //////////////////

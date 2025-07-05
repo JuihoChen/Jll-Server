@@ -25,6 +25,9 @@
 //             NOV 28, 2004   ports transparent bitmap buttons (from bhushan_at ).
 //             NOV 29, 2004   add tooltips to buttons by two different approaches.
 //             DEC 03, 2004   a system tray control is added to CFrameWnd.
+//     v0.19   DEC 06, 2004   use a different icon for SetIcon.
+//             DEC 09, 2004   allocate parallel port (parport.sys) via PortTalk driver.
+//             DEC 27, 2004   add option in menu to edit "DisableWarmPoll" registry setting.
 
 #include "stdafx.h"
 #include "Jll Server.h"
@@ -49,6 +52,7 @@ BEGIN_MESSAGE_MAP(CJllServerApp, CWinApp)
 	//{{AFX_MSG_MAP(CJllServerApp)
 	ON_COMMAND(ID_APP_ABOUT, OnAppAbout)
 	ON_COMMAND(ID_FILE_NEW, OnFileNew)
+	ON_COMMAND(ID_EDIT_DISABLEWARMPOLL, OnEditDisablewarmpoll)
 	//}}AFX_MSG_MAP
 	// Standard file based document commands
 	ON_COMMAND(ID_FILE_NEW, CWinApp::OnFileNew)
@@ -146,27 +150,13 @@ BOOL CJllServerApp::AvoidMultipleInstances() const
 
 BOOL CJllServerApp::InitInstance()
 {
+    CString s;
+
 	// Check only running on WinXP/NT systems.
 	if( GetVersion() & 0x80000000 )
 	{
-		MessageBox( NULL,
-			"This application is only allowed to be running on Windows XP or NT.",
-			AfxGetAppName(),
-			MB_ICONSTOP | MB_OK
-		);
-		return FALSE; // and fail
-	}
-
-	// Check if the parallel port setup okay?
-	m_lptNibble.Setup();
-
-	if( !m_lptNibble.PortIsPresent() )
-	{
-		MessageBox( NULL,
-			"This application needs a printer port on the system.",
-			AfxGetAppName(),
-			MB_ICONSTOP | MB_OK
-		);
+		s = "This application is only allowed to be running on Windows XP or NT.";
+		MessageBox( NULL, s, AfxGetAppName(), MB_ICONSTOP | MB_OK );
 		return FALSE; // and fail
 	}
 
@@ -174,24 +164,32 @@ BOOL CJllServerApp::InitInstance()
 	if( !AvoidMultipleInstances() )
 		return FALSE;
 
+	// Check if the parallel port setup okay?
+	m_lptNibble.Setup();
+
+	if( !m_lptNibble.PortIsPresent() )
+	{
+		s = "This application needs a printer port on the system.";
+		MessageBox( NULL, s, AfxGetAppName(), MB_ICONSTOP | MB_OK );
+		return FALSE; // and fail
+	}
+
 	// Try to open PortTalk driver to touch LPT ports...
 	switch( m_drvPortTalk.OpenPortTalk() )
 	{
 	case CPortTalk::Success:
 		break;
+	case CPortTalk::InvalidHandleLPT1:
+		s = "Couldn't get device object pointer to parallel port 0 (Parport.sys).",
+		MessageBox( NULL, s, AfxGetAppName(), MB_ICONSTOP | MB_OK );
+		return FALSE;
 	case CPortTalk::InvalidHandleValue:
-		MessageBox( NULL,
-			"Couldn't access PortTalk Driver.",
-			AfxGetAppName(),
-			MB_ICONSTOP | MB_OK
-		);
+		s = "Couldn't access PortTalk Driver.",
+		MessageBox( NULL, s, AfxGetAppName(), MB_ICONSTOP | MB_OK );
 		return FALSE;
 	case CPortTalk::IoControlError:
-		MessageBox( NULL,
-			"Error in calling DeviceIoControl.",
-			AfxGetAppName(),
-			MB_ICONSTOP | MB_OK
-		);
+		s = "Error in calling DeviceIoControl.",
+		MessageBox( NULL, s, AfxGetAppName(), MB_ICONSTOP | MB_OK );
 		return FALSE;
 	}
 
@@ -241,11 +239,8 @@ BOOL CJllServerApp::InitInstance()
 
 	if( m_drvPortTalk.EnableIOPM( m_lptNibble.GetBaseAddr() ) != CPortTalk::Success )
 	{
-		MessageBox( NULL,
-			"Error in IPOM setting for process.",
-			AfxGetAppName(),
-			MB_ICONSTOP | MB_OK
-		);
+		s = "Error in IPOM setting for process.",
+		MessageBox( NULL, s, AfxGetAppName(), MB_ICONSTOP | MB_OK );
 		return FALSE;
 	}
 
@@ -356,6 +351,51 @@ void CJllServerApp::StoreProfileStrings()
 	ASSERT( bRet == TRUE );
 }
 
+void CJllServerApp::OnEditDisablewarmpoll() 
+{
+	DWORD myData = 0;
+	HKEY phkResult;
+	CString myKey;
+	DWORD mySize;
+	DWORD myType;
+	myKey.LoadString( ID_EDIT_DISABLEWARMPOLL );
+	myKey = myKey.Mid( myKey.Find( '\\' ) + 1 );
+	LONG res = RegOpenKeyEx( HKEY_LOCAL_MACHINE, myKey, 0, KEY_READ, &phkResult );
+	if( res == ERROR_SUCCESS )
+	{
+		mySize = sizeof myData;
+		myType = REG_DWORD;
+
+		res = RegQueryValueEx(
+				phkResult,					// handle to key to query
+				"DisableWarmPoll",			// address of name of value to query
+				NULL,						// reserved
+				&myType,					// address of buffer for value type
+				(LPBYTE)&myData,			// address of data buffer
+				&mySize );					// address of data buffer size
+
+		if( res != ERROR_SUCCESS )
+			myData = 0;
+ 	}
+	RegCloseKey( phkResult );
+
+	myData = myData ? 0 : 1;
+	mySize = sizeof myData;
+	myType = REG_DWORD;
+
+	res = RegOpenKeyEx( HKEY_LOCAL_MACHINE, myKey, 0, KEY_WRITE, &phkResult );
+
+	res = RegSetValueEx(
+		phkResult,					// handle to key to query
+		"DisableWarmPoll",			// address of name of value to query
+		NULL,						// reserved
+		myType,						// address of buffer for value type
+		(LPBYTE)&myData,			// address of data buffer
+		mySize );					// address of data buffer size
+
+	RegCloseKey( phkResult );
+}
+
 // MSDN: If an application has set a very short timer, or if the system is
 // sending the WM_SYSTIMER message, then OnIdle will be called repeatedly,
 // and degrade performance.
@@ -396,4 +436,3 @@ BOOL CJllServerApp::OnIdle(LONG lCount)
 //DEL 	pDoc->FormatOutputV( lpszFormat, argList );
 //DEL 	va_end( argList );
 //DEL }
-

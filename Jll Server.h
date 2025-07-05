@@ -34,6 +34,7 @@ public:
 	CString m_sStartingDir;
 	BOOL m_bDetectSpkOn;
 	CNibbleModeProto m_lptNibble;
+	CPortTalk m_drvPortTalk;
 
 // Overrides
 	// ClassWizard generated virtual function overrides
@@ -47,10 +48,9 @@ public:
 	//{{AFX_MSG(CJllServerApp)
 	afx_msg void OnAppAbout();
 	afx_msg void OnFileNew();
+	afx_msg void OnEditDisablewarmpoll();
 	//}}AFX_MSG
 	DECLARE_MESSAGE_MAP()
-protected:
-	CPortTalk m_drvPortTalk;
 };
 
 inline CJllServerApp* GetMyApp()

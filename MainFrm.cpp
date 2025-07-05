@@ -29,6 +29,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_WM_CLOSE()
 	ON_WM_SYSCOMMAND()
 	ON_COMMAND(IDR_TASKBAR_MENU_SHOW, OnTaskbarMenuShow)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_DISABLEWARMPOLL, OnUpdateEditDisablewarmpoll)
 	//}}AFX_MSG_MAP
 	ON_MESSAGE(UWM_CPY_PROGRS, OnCopyProgress)
 	ON_MESSAGE(UWM_EXCEPT_BOX, OnExceptionBox)
@@ -144,6 +145,9 @@ void CMainFrame::SetupTrayIcon()
 	m_hIconDisconnect = ::LoadIcon( ::AfxGetInstanceHandle(), MAKEINTRESOURCE(IDI_ICON_DISCONN) );
 	m_hIconConnected  = ::LoadIcon( ::AfxGetInstanceHandle(), MAKEINTRESOURCE(IDI_ICON_CONNECT) );
 
+	SetIcon( m_hIconDisconnect, TRUE );
+	SetIcon( m_hIconDisconnect, FALSE );
+
 	m_cTrayIcon.SetTrayIcon( m_hWnd, IDR_MAINFRAME, m_hIconDisconnect, AfxGetAppName() );
 	m_cTrayIcon.SetMouseMsgHandler( aHandler, 2 );
 }
@@ -157,8 +161,25 @@ BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 	// TODO: Modify the Window class or styles here by modifying
 	//  the CREATESTRUCT cs
 	///cs.style &= ~FWS_ADDTOTITLE;
-	
+
 	return TRUE;
+}
+
+BOOL CMainFrame::DestroyWindow() 
+{
+	// TODO: Add your specialized code here and/or call the base class
+	OnStopTimer( nTimerIdAll );
+	if( m_pTheServer )
+	{
+		delete m_pTheServer;
+		m_pTheServer = 0;
+	}
+	if( IsWindow( m_ExceptDlg.GetSafeHwnd() ) )
+	{
+		m_ExceptDlg.DestroyWindow();
+		m_ExceptDlg.m_hWnd = 0;			// Invalidate Handle evev though redundant!
+	}
+	return CFrameWnd::DestroyWindow();
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -209,11 +230,13 @@ void CMainFrame::OnTimer(UINT nIDEvent)
 			MessageBeep( 0xFFFFFFFF );		// Beep
 		}
 
+		GetMyApp()->m_drvPortTalk.ParAllocPort();	// ask Parport.sys to allocate port
 		GetMyApp()->m_lptNibble.EnterIdleCondition();
 
 		if( !GetMyApp()->m_lptNibble.DetectTheGuest() )
 		{
 			GetMyApp()->m_lptNibble.EnterIdleCondition();
+			GetMyApp()->m_drvPortTalk.ParFreePort();  // free parallel port from Parport.sys
 		}
 		else
 		{
@@ -229,23 +252,6 @@ void CMainFrame::OnTimer(UINT nIDEvent)
 	}
 
 	CFrameWnd::OnTimer(nIDEvent);
-}
-
-BOOL CMainFrame::DestroyWindow() 
-{
-	// TODO: Add your specialized code here and/or call the base class
-	OnStopTimer( nTimerIdAll );
-	if( m_pTheServer )
-	{
-		delete m_pTheServer;
-		m_pTheServer = 0;
-	}
-	if( IsWindow( m_ExceptDlg.GetSafeHwnd() ) )
-	{
-		m_ExceptDlg.DestroyWindow();
-		m_ExceptDlg.m_hWnd = 0;			// Invalidate Handle evev though redundant!
-	}
-	return CFrameWnd::DestroyWindow();
 }
 
 UINT CMainFrame::OnStartTimer(UINT nIDEvent)
@@ -318,8 +324,9 @@ LRESULT CMainFrame::OnExceptionBox( WPARAM wParam, LPARAM lParam )
 
 LRESULT CMainFrame::OnServerEndJob( WPARAM wParam, LPARAM lParam )
 {
- 	FormatOutput( "the Guest is disconnected... %s", CTime::GetCurrentTime().Format( "at %H:%M:%S" ) );
+	FormatOutput( "the Guest is disconnected... %s", CTime::GetCurrentTime().Format( "at %H:%M:%S" ) );
 	GetActiveView()->EnableFolderChange( TRUE );
+	GetMyApp()->m_drvPortTalk.ParFreePort();	// free parallel port from Parport.sys
 ///v0.18***	OnStartTimer( nTimerIdDetectGuest );
 	m_cTrayIcon.ModifyIcon( m_hIconDisconnect, m_pTheServer->GetWorkDir() );
 	return 0;
@@ -378,16 +385,13 @@ void CMainFrame::OnClose()
 	{
 		// Play the system exclamation sound.
 		MessageBeep( MB_ICONEXCLAMATION );
+
 		// Create the message box. If the user clicks the Yes button,
-		// destroy the main window. 
-		if(	IDOK != MessageBox(
-			"Server is still in connection with a Guest,\r\n"
-			"Still continue to exit?",
-			AfxGetAppName(),
-			MB_ICONQUESTION | MB_OKCANCEL | MB_OK ) )
-		{
+		// destroy the main window.
+		CString s = "Server is still in connection with a Guest,\r\n"
+					"Still continue to exit?";
+		if(	IDOK != MessageBox( s, AfxGetAppName(), MB_ICONQUESTION | MB_OKCANCEL | MB_OK ) )
 			return;
-		}
 	}
 
 	CFrameWnd::OnClose();
@@ -454,4 +458,32 @@ void CMainFrame::OnNotifyIcon(WPARAM wParam, LPARAM lParam)
 void CMainFrame::OnTaskbarMenuShow() 
 {
 	m_cTrayIcon.RestoreWindow();
+}
+
+void CMainFrame::OnUpdateEditDisablewarmpoll(CCmdUI* pCmdUI) 
+{
+	DWORD myData = 0;
+	HKEY phkResult;
+	CString myKey;
+	myKey.LoadString( ID_EDIT_DISABLEWARMPOLL );
+	myKey = myKey.Mid( myKey.Find( '\\' ) + 1 );
+	LONG res = RegOpenKeyEx( HKEY_LOCAL_MACHINE, myKey, 0, KEY_READ, &phkResult );
+	if( res == ERROR_SUCCESS )
+	{
+		DWORD mySize = sizeof myData;
+		DWORD myType = REG_DWORD;
+
+		res = RegQueryValueEx(
+				phkResult,					// handle to key to query
+				"DisableWarmPoll",			// address of name of value to query
+				NULL,						// reserved
+				&myType,					// address of buffer for value type
+				(LPBYTE)&myData,			// address of data buffer
+				&mySize	);					// address of data buffer size
+
+		if( res != ERROR_SUCCESS )
+			myData = 0;
+ 	}
+	RegCloseKey( phkResult );
+	pCmdUI->SetCheck( myData != 0 );
 }

@@ -40,17 +40,19 @@ BOOL CParPort::TestPort()
 {
 	// Check if PRN driver found okay in the XP system?
 	HANDLE hLpt = CreateFile(
-		"\\\\.\\PRN",
+		"\\\\.\\LPT1",
 		GENERIC_READ | GENERIC_WRITE,
 		0,									// exclusive access 
 		NULL,
 		OPEN_EXISTING,
-		0,
-		NULL
-	);
+		FILE_ATTRIBUTE_NORMAL,
+		NULL );
 
 	if( hLpt == INVALID_HANDLE_VALUE )		// we can't open the LPT device
+	{
+		TRACE1( "CParPort: Cannot open a handle to LPT1 - %d.\n", GetLastError() );
 		return FALSE;
+	}
 	else
 		CloseHandle( hLpt );				// we're done with the handle
 
@@ -182,9 +184,9 @@ LONG CNibbleModeProto::GetLptPortInTheRegistry( int myPort )
 			"Configuration Data",		// address of name of value to query
 			NULL,						// reserved
 			&myType,					// address of buffer for value type
-			(unsigned char *)myData,	// address of data buffer
-			&mySize						// address of data buffer size
-		);
+			(LPBYTE)myData,				// address of data buffer
+			&mySize	);					// address of data buffer size
+
 	if( res != ERROR_SUCCESS )
 		return (-1);
  
