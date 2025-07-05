@@ -9,6 +9,7 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#include <afxtempl.h>
 #include "except.h"
 #include "parallel.h"
 #include "barchive.h"
@@ -16,6 +17,8 @@
 #define  _ALLFILES		"*.*"
 #define  _PARENT_DIR	".."
 #define  _SELF_DIR		"."
+
+typedef	CTypedPtrArray<CObArray, CFileInfo*> tmplTOCARRAY;
 
 class CBArchive;
 class CFileInfo;
@@ -37,6 +40,7 @@ public:
 		RequestChgDir	= 0x15,
 		TransferData	= 0x29,
 		ReadTOC			= 0x43,
+		RequestSpecific	= 0x67,
 		ChangeBandwidth	= 0xef,
 		IllegalOpcode	= 0xff
 	};
@@ -50,6 +54,7 @@ public:
 	};
 	enum {
 		b7_Lock = 0x80,
+		b6_SubDir = 0x40,
 
 		b7_NCRC = 0x80,
 		b6_CF   = 0x40,
@@ -66,21 +71,23 @@ protected:
 	void ReceiveIntoBufferInByte( UINT nIndex, UINT nLen );
 	void FillBuffer( UINT nIndex, BYTE* src, UINT nLen );
 	WORD GetWord( UINT nIndex ) const;
+	CString GetString( int nIndex, int nMaxLen ) const;
 	void SetAt( UINT nIndex, WORD wElement );
 	void SetString( UINT nIndex, CString& rString );
-	void DeleteBase();
 	UINT Get_CRC_CheckSum( ULONG ulSize ) const;
+	static void DeleteBase( tmplTOCARRAY* pTocAr );
+	static CString ConcatDir( const CString& sDir, LPCSTR pzName ); 
 protected:
 	CNibbleModeProto& m_rNibbleModeDev;
 	ptrSendFunc m_pfnSendFromBuffer;
 	ptrRecvFunc m_pfnReceiveIntoBuffer;
 	CTimer m_tmrWaitS6;
 	CFileInfo m_fiInfo;
-	CObArray m_aFiInfoBase;
+	tmplTOCARRAY m_aFiInfoBase;
 	static const int m_nMaxSizeBase;
 	static BYTE abTestData[16];
 private:
-	BYTE FAR* m_fpBuffer;
+	BYTE* m_fpBuffer;
 #ifdef _DEBUG
 public:
 	virtual void AssertValid() const;
@@ -111,11 +118,13 @@ protected:
 	void SendData();
 	void ChangeDir();
 	void SendTOC();
+	void SendSpecific();
 	void SwitchBusSpeed();
 	EOpCode GetOpcode() const;
 	void InvalidateOpcode();
 	void ReceiveCommand();
 	void RetCheckStatus( int nStatus );
+	void CreateTOC( WORD nAlloc, BOOL fResp = TRUE );
 	void AddIntoTOC( CBArchive& bar, WIN32_FIND_DATA* pFileData );
 	void FormatOutput( LPCTSTR lpszFormat, ... );
 protected:
@@ -126,6 +135,10 @@ private:
 	BYTE m_bCDB[8];
 	CString m_sDirName;
 	CString m_sFileName;		// Wildcards incl.
+
+	CString m_sTocDir;
+	tmplTOCARRAY* m_pTocAr;
+
 #ifdef _DEBUG
 public:
 	virtual void AssertValid() const;
@@ -135,9 +148,9 @@ public:
 
 
 inline WORD CDirectCable::GetWord( UINT nIndex ) const
-	{ ASSERT( nIndex >= 0 && nIndex <= BF_MAXLEN - 1 ); return *(WORD FAR*)(m_fpBuffer + nIndex); }
+	{ ASSERT( nIndex >= 0 && nIndex <= BF_MAXLEN - 1 ); return *(WORD*)(m_fpBuffer + nIndex); }
 inline void CDirectCable::SetAt( UINT nIndex, WORD wElement )
-	{ ASSERT( nIndex >= 0 && nIndex <= BF_MAXLEN - 1 ); *(WORD FAR*)(m_fpBuffer + nIndex) = wElement; }
+	{ ASSERT( nIndex >= 0 && nIndex <= BF_MAXLEN - 1 ); *(WORD*)(m_fpBuffer + nIndex) = wElement; }
 
 inline CString& CDCServer::GetWorkDir()
 	{ return m_sDirName; }

@@ -104,18 +104,18 @@ public:
 		{ m_i64Start = GetQPCTime(); m_i64Interval = m_i64Freq * nSec; }
 	void ResetCounter()
 		{ m_nCountBeforeCheck = 0; }
-    void CounterExceedToCheck( int nNum = 100 )
+    void CounterExceedToCheck( int nNum = 3000 )
 		{ if( m_nCountBeforeCheck <= nNum ) m_nCountBeforeCheck ++; else CheckTimeout(); }
 	void CheckTimeout() const;
-	static __int64 GetQPCTime();
-	static void Delay( __int64 count );
+	static ULONGLONG GetQPCTime();
+	static void Delay( ULONGLONG count );
 protected:
 	int m_nCountBeforeCheck;
-	__int64 m_i64Start;
-	__int64 m_i64Interval;
-	__int64 m_i64Freq;
-	static __int64 m_i64Multiplier;
-	static const __int64 m_i64CountForOneSec;
+	ULONGLONG m_i64Start;
+	ULONGLONG m_i64Interval;
+	ULONGLONG m_i64Freq;
+	static ULONGLONG m_i64Multiplier;	// a number magnified by 10X
+	static const ULONGLONG m_i64CountForOneSec;
 };
 
 extern QPCTimer gblQPCTimer;			// the global QPC Timer object
@@ -128,7 +128,7 @@ class CExceptDlg : public CDialog
 // Construction
 public:
 	CExceptDlg(CWnd* pParent = NULL);   // standard constructor
-	void AddStringToEdit( const char* s );
+	void AddStringToEdit( LPCSTR s );
 
 // Dialog Data
 	//{{AFX_DATA(CExceptDlg)

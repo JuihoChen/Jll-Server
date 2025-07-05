@@ -100,6 +100,38 @@ CJllServerDoc* CJllServerView::GetDocument() // non-debug version is inline
 /////////////////////////////////////////////////////////////////////////////
 // CJllServerView message handlers
 
+INT CALLBACK CJllServerView::BrowseCallbackProc(HWND hwnd,UINT uMsg,LPARAM lp,LPARAM pData)
+{
+	TCHAR szDir[MAX_PATH];
+
+	switch( uMsg )
+	{
+	case BFFM_INITIALIZED:
+#if 0
+		if( GetCurrentDirectory( sizeof(szDir)/sizeof(TCHAR), szDir ) )
+		{
+			// WParam is TRUE since you are passing a path.
+			// It would be FALSE if you were passing a pidl.
+			::SendMessage( hwnd, BFFM_SETSELECTION, TRUE, (LPARAM)szDir );
+		}
+#else
+		::SendMessage( hwnd, BFFM_SETSELECTION, TRUE,
+			(LPARAM)(LPCSTR)(GetMyMainFrame()->GetActiveView()->m_sStartingFolder) );
+#endif
+		break;
+
+	case BFFM_SELCHANGED:
+		// Set the status window to the currently selected path.
+		if( SHGetPathFromIDList( (LPITEMIDLIST)lp , szDir ) )
+		{
+			::SendMessage( hwnd, BFFM_SETSTATUSTEXT, 0, (LPARAM)szDir );
+		}
+		break;
+	}
+
+	return 0;
+}
+
 void CJllServerView::OnButtonForDir()
 {
 	// TODO: Add your control notification handler code here
@@ -108,8 +140,45 @@ void CJllServerView::OnButtonForDir()
 	// Disable timer for detecting the guest temporarily.
 	CMainFrame* pFrame = (CMainFrame*)GetParent();
 	ASSERT_KINDOF( CMainFrame, pFrame );
-	pFrame->OnStopTimer( CMainFrame::nTimerIdDetectGuest );
-	
+	pFrame->StopTimer( CMainFrame::nTimerIdDetectGuest );
+
+#if 1
+	BROWSEINFO bi;
+	TCHAR szDir[MAX_PATH];
+	LPITEMIDLIST pidl;
+	LPMALLOC pMalloc;
+
+	if( SUCCEEDED( SHGetMalloc( &pMalloc ) ) )
+	{
+		ZeroMemory( &bi, sizeof bi );
+		bi.hwndOwner = GetSafeHwnd();
+		bi.pszDisplayName = 0;
+		bi.lpszTitle = "Select path:";
+		bi.pidlRoot = 0;
+		bi.ulFlags = BIF_RETURNONLYFSDIRS;// | BIF_STATUSTEXT;
+		bi.lpfn = CJllServerView::BrowseCallbackProc;
+		pidl = SHBrowseForFolder( &bi );
+		if( pidl )
+		{
+			if( SHGetPathFromIDList( pidl, szDir ) )
+			{
+				if( m_sStartingFolder.CompareNoCase( szDir ) )
+				{
+					m_sStartingFolder = szDir;
+					GetDocument()->FormatOutput( "Starting Folder is changed." );
+				}
+				UpdateData( FALSE );
+				// Update directory name in CDCServer class anyway.
+				ASSERT_KINDOF( CDCServer, pFrame->m_pTheServer );
+				pFrame->m_pTheServer->ParseWorkDir( m_sStartingFolder );
+
+				pMalloc->Free( pidl );
+				pMalloc->Release();
+			}
+		}
+	}
+
+#else
 	CMyFileDlg cfdlg(
 		FALSE,
 		NULL,
@@ -148,16 +217,17 @@ void CJllServerView::OnButtonForDir()
 		ASSERT_KINDOF( CDCServer, pFrame->m_pTheServer );
 		pFrame->m_pTheServer->ParseWorkDir( m_sStartingFolder );
     }
+#endif
 
 	// Reenable timer to detect the guest after this Dialog.
-///v0.18***	pFrame->OnStartTimer( CMainFrame::nTimerIdDetectGuest );	
+///v0.18***	pFrame->StartTimer( CMainFrame::nTimerIdDetectGuest );	
 }
 
 void CJllServerView::OnButtonResetDir()
 {
 	// Disable timer for detecting the guest temporarily.
 	CMainFrame* pFrame = GetMyMainFrame();
-	pFrame->OnStopTimer( CMainFrame::nTimerIdDetectGuest );
+	pFrame->StopTimer( CMainFrame::nTimerIdDetectGuest );
 
 	GetDocument()->FormatOutput( "Transferring directory is restored to the Starting Folder." );
 
@@ -169,7 +239,7 @@ void CJllServerView::OnButtonSetDir()
 {
 	// Disable timer for detecting the guest temporarily.
 	CMainFrame* pFrame = GetMyMainFrame();
-	pFrame->OnStopTimer( CMainFrame::nTimerIdDetectGuest );
+	pFrame->StopTimer( CMainFrame::nTimerIdDetectGuest );
 
 	GetDocument()->FormatOutput( "Starting Folder is set to the Transferring directory." );
 
@@ -378,3 +448,4 @@ BOOL CJllServerView::PreTranslateMessage(MSG* pMsg)
 	m_cToolTip.RelayEvent( pMsg );
 	return CFormView::PreTranslateMessage(pMsg);
 }
+

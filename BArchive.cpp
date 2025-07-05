@@ -278,8 +278,8 @@ void CFileInfo::Dump( CDumpContext& dc ) const
 
 	sTemp2.Format( "FileInfo: <filename> %s <filesize> %d\n"
 				   "          <attribute> %d <mtime> %s <%d>\n",
-				   (const char*) m_sFileName, m_size, m_attribute,
-				   (const char*)sTemp1, mtime );
+				   (LPCSTR) m_sFileName, m_size, m_attribute,
+				   (LPCSTR) sTemp1, mtime );
 	dc << sTemp2;
 }
 #endif

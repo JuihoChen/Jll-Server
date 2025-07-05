@@ -80,9 +80,9 @@ protected:
 
 private:
 	UINT m_nMode;
-	BYTE FAR* m_fpBufCur;
-	BYTE FAR* m_fpBufMax;
-	BYTE FAR* m_fpBufStart;
+	BYTE* m_fpBufCur;
+	BYTE* m_fpBufMax;
+	BYTE* m_fpBufStart;
 
 #ifdef _DEBUG
 public:
@@ -154,17 +154,17 @@ inline CBArchive& CBArchive::operator+=( const int nOffset )
 inline CBArchive& CBArchive::operator-=( const int nOffset )
 	{ m_fpBufCur -= nOffset; return *this; }
 inline CBArchive& CBArchive::operator<<( BYTE by )
-	{ *(BYTE FAR*)m_fpBufCur = by; m_fpBufCur += sizeof(BYTE); return *this; }
+	{ *(BYTE*)m_fpBufCur = by; m_fpBufCur += sizeof(BYTE); return *this; }
 inline CBArchive& CBArchive::operator<<( LONG l )
-	{ *(LONG FAR*)m_fpBufCur = l; m_fpBufCur += sizeof(LONG); return *this; }
+	{ *(LONG*)m_fpBufCur = l; m_fpBufCur += sizeof(LONG); return *this; }
 inline CBArchive& CBArchive::operator<<( CTimeDos t )
 	{ return *this << t.GetTime(); }
 inline CBArchive& CBArchive::operator>>( BYTE& by )
-	{ by = *(BYTE FAR*)m_fpBufCur; m_fpBufCur += sizeof(BYTE); return *this; }
+	{ by = *(BYTE*)m_fpBufCur; m_fpBufCur += sizeof(BYTE); return *this; }
 inline CBArchive& CBArchive::operator>>( LONG& l )
-	{ l = *(LONG FAR*)m_fpBufCur; m_fpBufCur += sizeof(LONG); return *this; }
+	{ l = *(LONG*)m_fpBufCur; m_fpBufCur += sizeof(LONG); return *this; }
 inline CBArchive& CBArchive::operator>>( CTimeDos& t )
-	{ t = *(LONG FAR*)m_fpBufCur; m_fpBufCur += sizeof(LONG); return *this; }
+	{ t = *(LONG*)m_fpBufCur; m_fpBufCur += sizeof(LONG); return *this; }
 inline CBArchive& CBArchive::operator<<( const CBObject* pBOb )
 	{ WriteBObject( pBOb ); return *this; }
 inline CBArchive& CBArchive::operator>>( CBObject* pBOb )

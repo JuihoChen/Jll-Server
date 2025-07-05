@@ -168,7 +168,7 @@ BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 BOOL CMainFrame::DestroyWindow() 
 {
 	// TODO: Add your specialized code here and/or call the base class
-	OnStopTimer( nTimerIdAll );
+	StopTimer( nTimerIdAll );
 	if( m_pTheServer )
 	{
 		delete m_pTheServer;
@@ -240,7 +240,7 @@ void CMainFrame::OnTimer(UINT nIDEvent)
 		}
 		else
 		{
-			OnStopTimer( nTimerIdDetectGuest );
+			StopTimer( nTimerIdDetectGuest );
 	 		FormatOutput( "the Guest is detected... %s",
 				CTime::GetCurrentTime().Format( "at %H:%M:%S on %A, %B %d, %Y" ) );
 			GetActiveView()->EnableFolderChange( FALSE );
@@ -254,7 +254,7 @@ void CMainFrame::OnTimer(UINT nIDEvent)
 	CFrameWnd::OnTimer(nIDEvent);
 }
 
-UINT CMainFrame::OnStartTimer(UINT nIDEvent)
+UINT CMainFrame::StartTimer(UINT nIDEvent)
 {
 	UINT nTimer = 0;
 
@@ -281,7 +281,7 @@ UINT CMainFrame::OnStartTimer(UINT nIDEvent)
 	return nTimer;
 }
 
-void CMainFrame::OnStopTimer(UINT nIDEvent)
+void CMainFrame::StopTimer(UINT nIDEvent)
 {
 	switch( nIDEvent )
 	{
@@ -303,7 +303,7 @@ void CMainFrame::CheckReTimerToDetectGuest()
 		GetActiveView()->EnableFolderChange( TRUE );
 
 		// Reenable timer to detect the guest after this Dialog.
-		OnStartTimer( nTimerIdDetectGuest );	
+		StartTimer( nTimerIdDetectGuest );	
 	}
 }
 
@@ -327,7 +327,7 @@ LRESULT CMainFrame::OnServerEndJob( WPARAM wParam, LPARAM lParam )
 	FormatOutput( "the Guest is disconnected... %s", CTime::GetCurrentTime().Format( "at %H:%M:%S" ) );
 	GetActiveView()->EnableFolderChange( TRUE );
 	GetMyApp()->m_drvPortTalk.ParFreePort();	// free parallel port from Parport.sys
-///v0.18***	OnStartTimer( nTimerIdDetectGuest );
+///v0.18***	StartTimer( nTimerIdDetectGuest );
 	m_cTrayIcon.ModifyIcon( m_hIconDisconnect, m_pTheServer->GetWorkDir() );
 	return 0;
 }

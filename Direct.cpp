@@ -25,7 +25,7 @@ BYTE CDirectCable::abTestData[16] =
 	{ 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
 	  0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
 
-const int CDirectCable::m_nMaxSizeBase = 1024;
+const int CDirectCable::m_nMaxSizeBase = (BF_MAXLEN - 2) / _FI_LEN - 1;
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -36,7 +36,7 @@ CDirectCable::CDirectCable( CNibbleModeProto& lpt ) : m_rNibbleModeDev( lpt )
 	ASSERT_VALID( &lpt );
 	m_pfnSendFromBuffer = SendFromBuffer;
 	m_pfnReceiveIntoBuffer = ReceiveIntoBuffer;
-	m_fpBuffer = (BYTE FAR*)malloc( 65536 );
+	m_fpBuffer = (BYTE*)malloc( 65536 );
 	ASSERT( m_fpBuffer != NULL);
 }
 
@@ -45,7 +45,7 @@ CDirectCable::~CDirectCable()
 	ASSERT_VALID( this );
 	if( m_fpBuffer != NULL )
 		free( m_fpBuffer );
-	DeleteBase();
+	DeleteBase( &m_aFiInfoBase );
 }
 
 #pragma check_stack( off )
@@ -61,7 +61,7 @@ void CDirectCable::SendFromBuffer( UINT nLen ) const
 		m_rNibbleModeDev.WriteByteToPort( m_fpBuffer[ n ] );
 	}
 
-	m_rNibbleModeDev.SetPollCounter( 500 );
+	m_rNibbleModeDev.SetPollCounter( 5000 );
 	m_rNibbleModeDev.WriteByteToPort( m_fpBuffer[ n ] );
 }
 
@@ -96,11 +96,11 @@ void CDirectCable::SendFromBufferInByte( UINT nLen ) const
 	m_rNibbleModeDev.SetPollCounter( 0 );
 	for( register UINT n = 0; nLen > 2; n += 2, nLen -= 2 )
 	{
-		m_rNibbleModeDev.WriteByteToPortInByte( *(WORD FAR*)(m_fpBuffer +n) );
+		m_rNibbleModeDev.WriteByteToPortInByte( *(WORD*)(m_fpBuffer +n) );
 	}
 
-	m_rNibbleModeDev.SetPollCounter( 500 );
-	m_rNibbleModeDev.WriteByteToPortInByte( *(WORD FAR*)(m_fpBuffer + n) );
+	m_rNibbleModeDev.SetPollCounter( 5000 );
+	m_rNibbleModeDev.WriteByteToPortInByte( *(WORD*)(m_fpBuffer + n) );
 }
 
 void CDirectCable::ReceiveIntoBufferInByte( register UINT nIndex, UINT nLen )
@@ -112,7 +112,7 @@ void CDirectCable::ReceiveIntoBufferInByte( register UINT nIndex, UINT nLen )
 	gblQPCTimer.SetTimer( 5 );		// v0.17 sets 5-sec timeout.
 	while( 1 )
 	{
-		*(WORD FAR*)(m_fpBuffer + nIndex) = m_rNibbleModeDev.ReadByteFromPortInByte();
+		*(WORD*)(m_fpBuffer + nIndex) = m_rNibbleModeDev.ReadByteFromPortInByte();
 		if( nLen <= 2 ) break;		// received the last word? (1 or 2)
 		nIndex += 2;
 		nLen -= 2;
@@ -131,6 +131,26 @@ void CDirectCable::FillBuffer( UINT nIndex, BYTE* src, UINT nLen )
 	memcpy( m_fpBuffer + nIndex, src, nLen );
 }
 
+CString CDirectCable::GetString( int nIndex, int nMaxLen ) const
+{
+	if( nMaxLen > _MAX_PATH ) nMaxLen = _MAX_PATH;
+
+	ASSERT_VALID( this );
+	ASSERT( nIndex >= 0 && nMaxLen > 0 );
+	ASSERT( nIndex <= BF_MAXLEN && (nIndex + nMaxLen - 1) <= BF_MAXLEN );
+
+	char szBuffer[ _MAX_PATH + 1 ];
+	for( int i = 0; i < nMaxLen; i ++, nIndex ++ )
+	{
+		if( m_fpBuffer[ nIndex ] == '\0' || isspace( m_fpBuffer[ nIndex ] ) )
+			break;
+		szBuffer[ i ] = m_fpBuffer[ nIndex ];
+	}
+	szBuffer[ i ] = '\0';
+
+	return szBuffer;
+}
+
 void CDirectCable::SetString( UINT nIndex, CString& rString )
 {
 	int nLen = rString.GetLength();		// not include the null terminator
@@ -139,17 +159,7 @@ void CDirectCable::SetString( UINT nIndex, CString& rString )
 	ASSERT( nIndex >= 0 );
 	ASSERT( nIndex <= BF_MAXLEN && (nIndex + nLen - 1) <= BF_MAXLEN );
 
-	memcpy( m_fpBuffer + nIndex, (const char*)rString, nLen + 1 );
-}
-
-void CDirectCable::DeleteBase()
-{
-	ASSERT_VALID( this );
-	for( int i = 0; i < m_aFiInfoBase.GetSize(); i ++ )
-	{
-		delete m_aFiInfoBase[ i ];
-	}
-	m_aFiInfoBase.RemoveAll();
+	memcpy( m_fpBuffer + nIndex, (LPCSTR) rString, nLen + 1 );
 }
 
 // calculate CRC (16 bits) for buffered data, and set codeword trailing the data.
@@ -177,6 +187,27 @@ UINT CDirectCable::Get_CRC_CheckSum( ULONG ulSize ) const
 		nSeed = ((nSeed)>>8) ^ wCRC16a[bTmp&0x0F] ^ wCRC16b[bTmp>>4];
 	}
 	return nSeed;
+}
+
+void CDirectCable::DeleteBase( tmplTOCARRAY* pTocAr )
+{
+	ASSERT_VALID( pTocAr );
+	for( int i = 0; i < pTocAr->GetSize(); i ++ )
+	{
+		delete (*pTocAr)[ i ];
+	}
+	pTocAr->RemoveAll();
+}
+
+CString CDirectCable::ConcatDir( const CString& rsDir, LPCSTR pzName )
+{
+	CString sFullName = rsDir;
+	// Take care of directory name alike "C:\"...
+	if( sFullName[ sFullName.GetLength() - 1 ] != '\\' )
+	{
+		sFullName += "\\";
+	}
+	return sFullName += pzName;
 }
 
 #ifdef _DEBUG
@@ -272,6 +303,7 @@ void CDCServer::RetCheckStatus( int nStatus )
 	gblQPCTimer.Delay( 600 );					// (adequate) delay for next command.
 
 	m_tmrWaitS6.SetTimer( 5000, "SC:> " );		// re-turn on timer for message
+	m_rNibbleModeDev.SetPollCounter( 6000 );	//!v0.21
 	m_rNibbleModeDev.WriteNibbleToPort( nStatus, m_tmrWaitS6 );
 	m_tmrWaitS6.m_fEnabled = FALSE;				// turn off the timer
 }
@@ -310,13 +342,13 @@ void CDCServer::SendFileInfo()
 		m_fiInfo.m_bFileInUse = FALSE;
 	}
 
-	m_fiInfo.m_sFileName = m_sDirName + "\\" + ((CFileInfo*)(m_aFiInfoBase[ nIndex ]))->m_sFileName;
+	m_fiInfo.m_sFileName = ConcatDir( m_sDirName, m_aFiInfoBase[ nIndex ]->m_sFileName );
 
 	TRY
 	{
 		m_fiInfo.GetStatus();
 	}
-	CATCH( CFileException, theException )
+	CATCH( CFileException, e )
 	{
 		TRACE( " ==> could not retrieve status, negate the file size.\n" );
 
@@ -324,7 +356,7 @@ void CDCServer::SendFileInfo()
 	}
 	END_CATCH
 
-	if( (m_fiInfo.m_size < 0) || m_fiInfo != *(CFileInfo*)(m_aFiInfoBase[ nIndex ]) )
+	if( (m_fiInfo.m_size < 0) || m_fiInfo != *m_aFiInfoBase[ nIndex ] )
 	{
 		TRACE( "Media Changed: TOC/attributes have been changed.\n" );
 
@@ -335,8 +367,7 @@ void CDCServer::SendFileInfo()
 	RetCheckStatus( OkStatus );
 
 	FormatOutput( "Transferring file info. <%s> %s",
-		(const char*)((CFileInfo*)(m_aFiInfoBase[ nIndex ]))->m_sFileName,
-		CTime::GetCurrentTime().Format( "at %H:%M:%S" )
+		(LPCSTR) m_aFiInfoBase[ nIndex ]->m_sFileName, CTime::GetCurrentTime().Format( "at %H:%M:%S" )
 	);
 
 	m_fiInfo.m_bFileInUse = TRUE;			// set indicator for proper sequence
@@ -346,7 +377,7 @@ void CDCServer::SendFileInfo()
 
 	(this->*m_pfnSendFromBuffer)( nAllocLen );
 
-	// report copying progress.
+	// initiate to report copying progress.
 	::PostMessage( m_hWndOwner, UWM_CPY_PROGRS, 0, (LPARAM) m_fiInfo.m_size );
 
 #ifdef _DEBUG
@@ -439,13 +470,13 @@ void CDCServer::ChangeDir()
 		goto _goSend;
 	}
 
-	m_fiInfo.m_sFileName = m_sDirName + "\\" + ((CFileInfo*)(m_aFiInfoBase[ nIndex ]))->m_sFileName;
+	m_fiInfo.m_sFileName = ConcatDir( m_sDirName, m_aFiInfoBase[ nIndex ]->m_sFileName );
 
 	TRY
 	{
 		m_fiInfo.GetStatus();
 	}
-	CATCH( CFileException, theException )
+	CATCH( CFileException, e )
 	{
 		TRACE( " ==> could not retrieve status, zero the attribute byte.\n" );
 
@@ -454,14 +485,14 @@ void CDCServer::ChangeDir()
 	END_CATCH
 
 	// check to see if go up for mother-dir
-	if( ((CFileInfo*)(m_aFiInfoBase[ nIndex ]))->m_sFileName == _PARENT_DIR )
+	if( m_aFiInfoBase[ nIndex ]->m_sFileName == _PARENT_DIR )
 	{
 		int pos = m_sDirName.ReverseFind( '\\' );
 		if( pos != -1 )
 		{
 			// Copy file information for equal comparison below.
 			m_sDirName = m_sDirName.Left( pos );
-			m_fiInfo = *(CFileInfo*)(m_aFiInfoBase[ nIndex ]);
+			m_fiInfo = *m_aFiInfoBase[ nIndex ];
 		}
 		else   /// HERE MUST BE AN IMPOSSIBLE SITUATION.
 		{
@@ -472,12 +503,12 @@ void CDCServer::ChangeDir()
 		}
 	}
 
-	if( (m_fiInfo.m_attribute & CFile::directory) && m_fiInfo == *(CFileInfo*)(m_aFiInfoBase[ nIndex ]) )
+	if( (m_fiInfo.m_attribute & CFile::directory) && m_fiInfo == *m_aFiInfoBase[ nIndex ] )
 	{
 		// not going up for mother-dir
 		if( m_fiInfo.m_sFileName != _PARENT_DIR )
 		{
-			m_sDirName += "\\" + ((CFileInfo*)(m_aFiInfoBase[ nIndex ]))->m_sFileName;
+			m_sDirName = ConcatDir( m_sDirName, m_aFiInfoBase[ nIndex ]->m_sFileName );
 		}
 	}
 	else
@@ -502,14 +533,30 @@ _goSend:
 void CDCServer::SendTOC()
 {
 	ASSERT_VALID( this );
-	WORD nAllocLen = GetWord( 6 );
+	WORD nAllocLen = __min( GetWord( 6 ), BF_MAXLEN );
+
+	CreateTOC( nAllocLen );		// pass TRUEed fResp!
+}
+
+// Create a TOC array.
+// If passed a boolean flag fResp valued TRUE, the default TOC array m_aFiInfoBase
+// is to be manipulated and responses to the Guest are necessary.
+ 
+void CDCServer::CreateTOC( WORD nAlloc, BOOL fResp /* = TRUE */)
+{
+	if( fResp )
+	{
+		m_sTocDir = m_sDirName;
+		m_pTocAr = &m_aFiInfoBase;
+	}
+	ASSERT_KINDOF( CObArray, m_pTocAr );
 
 	// limit buffer size so that TRY/CATCH will handle file count.
-	CBArchive bar( *this, CBArchive::store, nAllocLen );
+	CBArchive bar( *this, CBArchive::store, nAlloc );
 	bar += 2;
 
-	DeleteBase();
-	m_aFiInfoBase.SetSize( 0, 256 );
+	DeleteBase( m_pTocAr );
+	m_pTocAr->SetSize( 0, 256 );
 
 	// find first all sub-directories, then find additional matches.
 	TRY
@@ -518,7 +565,7 @@ void CDCServer::SendTOC()
 		HANDLE hFile;
 
 		// First, see if there's anything in the directory
-		hFile = FindFirstFile( m_sDirName + "\\"_ALLFILES, &FindFileData );
+		hFile = FindFirstFile( ConcatDir( m_sTocDir, _ALLFILES ), &FindFileData );
 
 		if( INVALID_HANDLE_VALUE == hFile )
 		{
@@ -545,7 +592,7 @@ void CDCServer::SendTOC()
 		FindClose( hFile );
 
 		// First, see if there are matching files in the directory
-		hFile = FindFirstFile( m_sDirName + "\\" + m_sFileName, &FindFileData );
+		hFile = FindFirstFile( ConcatDir( m_sTocDir, m_sFileName ), &FindFileData );
 
 		// Next, loop through everything in the directory. If the found file
 		// is itself a matching file, add it to the list.
@@ -564,7 +611,7 @@ void CDCServer::SendTOC()
 		}
 		FindClose( hFile );
 	}
-	CATCH( CInfoException, theException )
+	CATCH( CInfoException, e )
 	{
 		TRACE( " ==> revise/fake bar pointer for checking.\n" );
 
@@ -574,24 +621,27 @@ void CDCServer::SendTOC()
 	}
 	END_CATCH
 
-	TRACE1( "Totally collected %d items for TOC.\n", m_aFiInfoBase.GetSize() );
+	TRACE1( "Totally collected %d items for TOC.\n", m_pTocAr->GetSize() );
 
 	// check the collected file info. for TOC
-	if( m_aFiInfoBase.GetSize() > (int)(nAllocLen / _FI_LEN) )
+	if( m_pTocAr->GetSize() > (int)(nAlloc / _FI_LEN) )
 	{
 /**********************************************************
-		RetCheckStatus( NgBadFieldInCDB );
-		return;
+		if( fResp )
+		{
+			RetCheckStatus( NgBadFieldInCDB );
+			return;
+		}
 **********************************************************/
 		TRACE( "==> Occurred Weird logic (should not be shown here)!\n" );
 	}
 
-	RetCheckStatus( OkStatus );
+	if( fResp ) RetCheckStatus( OkStatus );
 
-	FormatOutput( "Transferring directory %s", (const char*)m_sDirName );
+	FormatOutput( "Transferring directory %s", (LPCSTR) m_sTocDir );
 
 	// limit the dir/file count to be passed to the Guest.
-	int nCount = m_aFiInfoBase.GetSize();
+	int nCount = m_pTocAr->GetSize();
 	if (nCount > m_nMaxSizeBase)
 	{
 		nCount = m_nMaxSizeBase;
@@ -602,7 +652,7 @@ void CDCServer::SendTOC()
 	(this->*m_pfnSendFromBuffer)( 2 + nCount * _FI_LEN );
 
 	// it should not be nothing got, we checked file counts in constrcutor.
-	ASSERT( m_aFiInfoBase.GetSize() > 0 );
+	ASSERT( m_pTocAr->GetSize() > 0 );
 }
 
 void CDCServer::AddIntoTOC( CBArchive& bar, WIN32_FIND_DATA* pFileData )
@@ -646,7 +696,7 @@ void CDCServer::AddIntoTOC( CBArchive& bar, WIN32_FIND_DATA* pFileData )
 	{
 		bar << pFiInfo;
 	}
-	CATCH( CInfoException, theException )
+	CATCH( CInfoException, e )
 	{
 		TRACE( " ==> got it, delete allocated space and then rethrow.\n" );
 
@@ -654,7 +704,63 @@ void CDCServer::AddIntoTOC( CBArchive& bar, WIN32_FIND_DATA* pFileData )
 		THROW_LAST();
 	}
 	END_CATCH
-	m_aFiInfoBase.Add( pFiInfo );
+
+	ASSERT_KINDOF( CObArray, m_pTocAr );
+	m_pTocAr->Add( pFiInfo );
+}
+
+void CDCServer::SendSpecific()
+{
+	ASSERT_VALID( this );
+
+	BYTE bAttribute = GetAt( 1 );
+	WORD nNameLenZ  = GetWord( 4 );
+	WORD nAllocLen  = __min( GetWord( 6 ), BF_MAXLEN );
+
+	if( !( bAttribute & b6_SubDir ) )		// Not a directory?
+	{
+		if( nAllocLen != 0 )				// must not return TOC
+		{
+			RetCheckStatus( NgBadFieldInCDB );
+			return;
+		}
+	}
+	if( nNameLenZ == 0 )					// Must send in appended Path!
+	{
+		RetCheckStatus( NgBadFieldInCDB );
+		return;
+	}
+
+	RetCheckStatus( OkStatus );
+
+	(this->*m_pfnReceiveIntoBuffer)( 0, nNameLenZ );
+
+	m_sTocDir = GetString( 0, nNameLenZ );
+	TRACE1( "the specified name = %s\n", (LPCSTR) m_sTocDir );
+
+	if( m_fiInfo.m_fiArchive.m_hFile != CFile::hFileNull )
+	{
+		m_fiInfo.m_fiArchive.Close();
+		m_fiInfo.m_bFileInUse = FALSE;
+	}
+
+	if( bAttribute & b6_SubDir )			// a directory specified?
+	{
+		m_pTocAr = new tmplTOCARRAY;
+		ASSERT_KINDOF( CObArray, m_pTocAr );
+		CreateTOC( nAllocLen, FALSE );		// send requested TOC
+		DeleteBase( m_pTocAr );
+		delete m_pTocAr;
+	}
+	else
+	{
+		m_fiInfo.m_sFileName = m_sTocDir;
+		m_fiInfo.GetStatus();
+		m_fiInfo.m_bFileInUse = TRUE;		// set indicator for proper sequence
+
+		// initiate to report copying progress.
+		::PostMessage( m_hWndOwner, UWM_CPY_PROGRS, 0, (LPARAM) m_fiInfo.m_size );
+	}
 }
 
 void CDCServer::SwitchBusSpeed()
@@ -752,6 +858,9 @@ UINT CDCServer::DoWork()
 			case ReadTOC:
 				SendTOC();
 				break;
+			case RequestSpecific:
+				SendSpecific();
+				break;
 			case ChangeBandwidth:
 				SwitchBusSpeed();
 				break;
@@ -765,20 +874,20 @@ UINT CDCServer::DoWork()
 		}
 		while( m_bRunning && (GetOpcode() != EndDCC) );
 	}
-	CATCH( CExcptClass, theException )
+	CATCH( CExcptClass, e )
 	{
-		theException->Handler();
+		e->Handler();
 
 		::PostMessage( m_hWndOwner, UWM_EXCEPT_BOX, 0, 0L );
 	}
-	AND_CATCH( CFileException, theException )
+	AND_CATCH( CFileException, e )
 	{
-		FormatOutput( "Error: caught a file exception <%d>.", theException->m_cause );
+		FormatOutput( "Error: caught a file exception <%d>.", e->m_cause );
 	}
-	AND_CATCH( CException, theException )
+	AND_CATCH( CException, e )
 	{
 		CString sTemp;
-		sTemp.Format( "Unexpected exception:> %s\r\n", theException->GetRuntimeClass()->m_lpszClassName );
+		sTemp.Format( "Unexpected exception:> %s\r\n", e->GetRuntimeClass()->m_lpszClassName );
 		GetMyMainFrame()->m_ExceptDlg.AddStringToEdit( sTemp );
 
 		::PostMessage( m_hWndOwner, UWM_EXCEPT_BOX, 0, 0L );

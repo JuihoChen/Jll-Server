@@ -63,7 +63,8 @@ void CTrayIcon::RestoreWindow()
 {
 	m_bMinimizedToTray = FALSE;
 	DeleteIcon();
-	FromHandle()->ShowWindow( SW_NORMAL );
+	FromHandle()->ShowWindow(SW_SHOW);	///FromHandle()->ShowWindow( SW_NORMAL );
+	FromHandle()->ShowWindow(SW_RESTORE);
 	FromHandle()->SetForegroundWindow();
 }
 
@@ -72,6 +73,7 @@ void CTrayIcon::HideWindow(HICON hIcon /* = NULL */)
 	m_bMinimizedToTray = TRUE;
 	if( AddIcon( hIcon ) )
 	{
+		FromHandle()->ShowWindow( SW_MINIMIZE );	// animate Minimize.
 		FromHandle()->ShowWindow( SW_HIDE );
 	}
 }

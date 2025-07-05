@@ -15,18 +15,18 @@ Class3=CJllServerView
 Class4=CMainFrame
 
 ResourceCount=8
-Resource1=IDD_DIALOGBAR
+Resource1=IDD_FILEOPENORD
 Class5=CAboutDlg
 Resource2=IDR_TASKBAR_MENU
 Resource3=IDD_DIALOGBAR (English (U.S.))
-Resource4=IDD_ABOUTBOX
+Resource4=IDR_MAINFRAME
 Resource5=IDD_CHOOSEDIR_DIALOG (English (U.S.))
 Class6=CChooseDirDlg
 Class7=CNibbleModeProto
 Class8=CExceptDlg
-Resource6=IDR_MAINFRAME
+Resource6=IDD_DIALOGBAR
 Class9=CButtonStyle
-Resource7=IDD_FILEOPENORD
+Resource7=IDD_ABOUTBOX
 Resource8=IDD_EXCEPTBOX
 
 [CLS:CJllServerApp]

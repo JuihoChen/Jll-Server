@@ -31,7 +31,6 @@ class CMainFrame : public CFrameWnd
 
 protected: // create from serialization only
 	CMainFrame();
-	CJllServerView* GetActiveView() const;
 
 // Attributes
 public:
@@ -56,9 +55,10 @@ public:
 
 // Implementation
 public:
+	CJllServerView* GetActiveView() const;
 	void FormatOutput( LPCTSTR lpszFormat, ... );
-	UINT OnStartTimer(UINT nIDEvent);
-	void OnStopTimer(UINT nIDEvent);
+	UINT StartTimer(UINT nIDEvent);
+	void StopTimer(UINT nIDEvent);
 	void CheckReTimerToDetectGuest();
 	void SetupTrayIcon();
 	virtual ~CMainFrame();

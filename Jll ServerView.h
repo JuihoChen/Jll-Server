@@ -61,6 +61,7 @@ public:
 // Implementation
 protected:
 	virtual ~CJllServerView();
+	static INT CALLBACK BrowseCallbackProc(HWND hwnd,UINT uMsg,LPARAM lp,LPARAM pData);
 #ifdef _DEBUG
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;

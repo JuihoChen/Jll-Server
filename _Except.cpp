@@ -124,11 +124,12 @@ void CTimer::AssertValid() const
 // QPCTimer Class
 //////////////////////////////////////////////////////////////////////
 
-QPCTimer gblQPCTimer;					// the global QPC Timer object
+QPCTimer gblQPCTimer;						// the global QPC Timer object
 
 ////int QPCTimer::m_nCountBeforeCheck;
-__int64 QPCTimer::m_i64Multiplier = 1;
-const __int64 QPCTimer::m_i64CountForOneSec = 0x369e99;
+ULONGLONG QPCTimer::m_i64Multiplier = 10;	// a number magnified by 10X
+// this count for one sec. is a value on my machine "Toshiba Satellite" for reference.
+const ULONGLONG QPCTimer::m_i64CountForOneSec = 0x369e99;
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -139,34 +140,34 @@ QPCTimer::QPCTimer()
 	// check if high-resolution performance counter not supported.
 	if( QueryPerformanceFrequency( (LARGE_INTEGER*) &m_i64Freq ) )
 	{
-		m_i64Multiplier = m_i64Freq / m_i64CountForOneSec;
-		if( m_i64Multiplier == 0 ) m_i64Multiplier = 1;
+		m_i64Multiplier = (m_i64Freq * 10) / m_i64CountForOneSec;
+		if( m_i64Multiplier <= 0 ) m_i64Multiplier = 1;
 	}
 	else
 	{
 		m_i64Freq = 0;
-		m_i64Multiplier = 1;
+		m_i64Multiplier = 10;
 	}
 }
 
-__int64 QPCTimer::GetQPCTime()
+ULONGLONG QPCTimer::GetQPCTime()
 {
-	__int64 li;
+	ULONGLONG li;
 	QueryPerformanceCounter( (LARGE_INTEGER*) &li );
 	return li;
 }
 
-void QPCTimer::Delay( __int64 count )
+void QPCTimer::Delay( ULONGLONG count )
 {
 	ASSERT( gblQPCTimer.m_i64Freq );
 
-	count *= m_i64Multiplier;
-	__int64 fromQPC = GetQPCTime(), toQPC;
+	count = (count * m_i64Multiplier) / 10 * 10;	// enlarge the delay by 10 times
+	ULONGLONG fromQPC = GetQPCTime(), toQPC;
     do
     {
         toQPC = GetQPCTime();
     }
-    while( count > toQPC - fromQPC );
+    while( count > (toQPC - fromQPC) );
 }
 
 void QPCTimer::CheckTimeout() const
@@ -206,7 +207,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CExceptDlg message handlers
 
-void CExceptDlg::AddStringToEdit( const char* s )
+void CExceptDlg::AddStringToEdit( LPCSTR s )
 {
 	if( m_sExceptEdit.GetLength() > 2000 )
 	{

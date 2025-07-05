@@ -30,6 +30,7 @@
 //             DEC 27, 2004   add option in menu to edit "DisableWarmPoll" registry setting.
 //     v0.20   DEC 28, 2004   make some decorations.
 //             DEC 31, 2004   fix bug editing "DisableWarmPoll" when missing key "Parameters".
+//     v0.21   FEB 03, 2005   use SHBrowseForFolder to pick the working directory.
 
 #include "stdafx.h"
 #include "Jll Server.h"
@@ -76,6 +77,8 @@ CJllServerApp::CJllServerApp()
 	_OutputDebugString( "We start here...\n" );
 }
 
+#define SMTO_NOTIMEOUTIFNOTHUNG 0x0008
+
 /////////////////////////////////////////////////////////////////////////////
 // Some coded copied from articles of The Code Project
 BOOL CALLBACK CJllServerApp::Searcher( HWND hWnd, LPARAM lParam )
@@ -118,12 +121,7 @@ BOOL CJllServerApp::AvoidMultipleInstances() const
 		{ /* pop up */
 			::SetForegroundWindow( hOther );
 
-			if( ::IsIconic( hOther ) )
-			{ /* restore */
-				::ShowWindow( hOther, SW_RESTORE );
-			} /* restore */
-
-			else if( !::IsWindowVisible( hOther ) )
+			if( !::IsWindowVisible( hOther ) )
 			{ /* restore from system tray */
 				DWORD result;
 				LRESULT ok = ::SendMessageTimeout(
@@ -135,6 +133,12 @@ BOOL CJllServerApp::AvoidMultipleInstances() const
 					200,
 					&result );
 			} /* restore from system tray */
+
+			else if( ::IsIconic( hOther ) )
+			{ /* restore */
+				::ShowWindow( hOther, SW_RESTORE );
+			} /* restore */
+
 		} /* pop up */
 
 		// Display something that tells the user
@@ -259,7 +263,7 @@ BOOL CJllServerApp::InitInstance()
 	((CMainFrame*)m_pMainWnd)->m_pTheServer = new CDCServer( m_lptNibble );
 	ASSERT_KINDOF( CDCServer, ((CMainFrame*)m_pMainWnd)->m_pTheServer );
 	((CMainFrame*)m_pMainWnd)->m_pTheServer->ParseWorkDir( m_sStartingDir );
-///v0.18***	((CMainFrame*)m_pMainWnd)->OnStartTimer( CMainFrame::nTimerIdDetectGuest );
+///v0.18***	((CMainFrame*)m_pMainWnd)->StartTimer( CMainFrame::nTimerIdDetectGuest );
 
 	_OutputDebugString( "CJllServerApp>Leave App's InitInstance.\n" );
 	return TRUE;

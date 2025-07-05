@@ -169,7 +169,7 @@ LONG CNibbleModeProto::GetLptPortInTheRegistry( int myPort )
 	if( res < 0 )
 		return (-1);
          
-	sprintf( myData, "%s\\%d", (const char*)myKey, myPort );
+	sprintf( myData, "%s\\%d", (LPCSTR) myKey, myPort );
 	TRACE1( "key value for \"Configuration Data\" = %s\n", myData );
 
 	res = RegOpenKeyEx( HKEY_LOCAL_MACHINE, myData, 0, KEY_READ, &phkResult );
@@ -389,10 +389,15 @@ void CNibbleModeProto::WriteNibbleToPort( BYTE bNibbleToWrite, CTimer& tmrWaitS6
 	//NOTICE: experimental result...
 	//   In transients between CDB & Status nibble in command phase,
 	//   a polling for not being busy is necessary as below.
+#if 1	//!v0.21
+	while( ((CNibbleModeProto*)this)->CheckForPolling() && (m_cParaport.ReadStatusPort() & iBUSY_VAL) == 0x0 )
+		;
+#else
 	while ((m_cParaport.ReadStatusPort() & iBUSY_VAL) == 0x0)
 	{
 		tmrWaitS6.CheckTimeout();		// use TRY/CATCH mechanism
 	}
+#endif
 }
 
 BYTE CNibbleModeProto::ReadByteFromPort( CTimer& tmrWaitS6 )
