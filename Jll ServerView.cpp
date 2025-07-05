@@ -134,7 +134,6 @@ INT CALLBACK CJllServerView::BrowseCallbackProc(HWND hwnd,UINT uMsg,LPARAM lp,LP
 
 void CJllServerView::OnButtonForDir()
 {
-	// TODO: Add your control notification handler code here
 	_OutputDebugString( "View::Button for Dir. called.\n" );
 
 	// Disable timer for detecting the guest temporarily.
@@ -161,9 +160,8 @@ void CJllServerView::OnButtonForDir()
 		{
 			if( SHGetPathFromIDList( pidl, szDir ) )
 			{
-				if( m_cStartingFolder.GetCurText().CompareNoCase( szDir ) )
+				if( m_cStartingFolder.SetCurText( szDir ) )
 				{
-					m_cStartingFolder.SetCurText( szDir );
 					GetDocument()->FormatOutput( "Starting Folder is changed." );
 				}
 				UpdateData( FALSE );
@@ -183,6 +181,8 @@ void CJllServerView::OnButtonForDir()
 
 void CJllServerView::OnSelchangeComboForDir() 
 {
+	_OutputDebugString( "View::OnSelchangeComboForDir called.\n" );
+
 	// Disable timer for detecting the guest temporarily.
 	CMainFrame* pFrame = GetMyMainFrame();
 	pFrame->StopTimer( CMainFrame::nTimerIdDetectGuest );
@@ -309,13 +309,6 @@ void CJllServerView::OnInitialUpdate()
 {
 	_OutputDebugString( "View::OnInitialUpdate called.\n" );
 
-	// The OnInitialUpdate member function is called to perform one-time
-	// initialization of the view.
-	// Lines below are used to do custom initialization only.
-	// ***Delete lines for initialization due to reset by NewDocument.***
-	//m_cStartingFolder.GetCurText() = GetMyApp()->m_sStartingDir;
-	//UpdateData( FALSE );
-
 	CFormView::OnInitialUpdate();		// this calls OnUpdate then
 	
 	// TODO: Add your specialized code here and/or call the base class
@@ -370,6 +363,7 @@ void CJllServerView::OnInitialUpdate()
 				ncx, rect.Height(),
 				SWP_NOZORDER | SWP_NOACTIVATE );	// SWP_NOMOVE
 		}
+		SetScrollSizes( MM_TEXT, CSize( 700, m_nTopForText + m_nNumLines * m_nLineHeight ) );
 
 		// set up the tooltip control....
 		m_cToolTip.Create( this, TTS_ALWAYSTIP );
@@ -387,7 +381,7 @@ void CJllServerView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 
 	// Call SetScrollSizes when the view is about to be updated. Call it in your
 	// override of the OnUpdate member function to adjust scrolling characteristics.
-	SetScrollSizes( MM_TEXT, CSize( 700, 450 ) );
+	///SetScrollSizes( MM_TEXT, CSize( 700, 400 ) );
 
 	// The OnUpdate member function is defined by CView and is called to update
 	// the form view's appearance. Override this function to update the member
@@ -431,10 +425,12 @@ BOOL CJllServerView::PreTranslateMessage(MSG* pMsg)
 
 CFolderCombo::CFolderCombo()
 {
+	m_fChanged = FALSE;
 }
 
 CFolderCombo::~CFolderCombo()
 {
+	ASSERT( m_fChanged == FALSE );
 }
 
 BEGIN_MESSAGE_MAP(CFolderCombo, CComboBox)
@@ -467,18 +463,22 @@ void CFolderCombo::Initialize()
 	SetCurSel( 0 );
 }
 
-void CFolderCombo::CleanUp() const
+void CFolderCombo::CleanUp()
 {
-	for( int i = 0; i < 10; i ++ )
+	if( m_fChanged )
 	{
-		if( i < GetCount() )
+		m_fChanged = FALSE;
+		for( int i = 0; i < 10; i ++ )
 		{
-			CString sText;
-			GetLBText( i, sText );
-			GetMyApp()->StoreProfileStrings( i, sText );
+			if( i < GetCount() )
+			{
+				CString sText;
+				GetLBText( i, sText );
+				GetMyApp()->StoreProfileStrings( i, sText );
+			}
+			else
+				GetMyApp()->StoreProfileStrings( i );
 		}
-		else
-			GetMyApp()->StoreProfileStrings( i );
 	}
 }
 
@@ -510,7 +510,7 @@ BOOL CFolderCombo::SetCurText(const CString sText)
 		if( GetCount() > 10 ) DeleteString( 9 );
 		InsertString( 0, sText );
 		SetCurSel( 0 );
-		return TRUE;
+		return m_fChanged = TRUE;
 	}
 	else
 		return FALSE;

@@ -6,13 +6,13 @@
 --------------------Configuration: Jll Server - Win32 Release--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "C:\DOCUME~1\JUIHOC~1\LOCALS~1\Temp\RSP1A7.tmp" with contents
+Creating temporary file "C:\DOCUME~1\JUIHOC~1\LOCALS~1\Temp\RSP3.tmp" with contents
 [
 /nologo /MD /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_AFXDLL" /FAcs /Fa"Release/" /FR"Release/" /Fp"Release/Jll Server.pch" /Yu"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
-"C:\Program Files\Microsoft Visual Studio\MyProjects\Jll Server\Jll Server.cpp"
+"C:\Program Files\Microsoft Visual Studio\MyProjects\Jll Server\Direct.cpp"
 ]
-Creating command line "cl.exe @C:\DOCUME~1\JUIHOC~1\LOCALS~1\Temp\RSP1A7.tmp" 
-Creating temporary file "C:\DOCUME~1\JUIHOC~1\LOCALS~1\Temp\RSP1A8.tmp" with contents
+Creating command line "cl.exe @C:\DOCUME~1\JUIHOC~1\LOCALS~1\Temp\RSP3.tmp" 
+Creating temporary file "C:\DOCUME~1\JUIHOC~1\LOCALS~1\Temp\RSP4.tmp" with contents
 [
 /nologo /subsystem:windows /incremental:no /pdb:"Release/Jll Server.pdb" /machine:I386 /out:"Release/Jll Server.exe" 
 ".\Release\_Except.obj"
@@ -32,12 +32,12 @@ Creating temporary file "C:\DOCUME~1\JUIHOC~1\LOCALS~1\Temp\RSP1A8.tmp" with con
 ".\Release\TrayIcon.obj"
 ".\Release\Jll Server.res"
 ]
-Creating command line "link.exe @C:\DOCUME~1\JUIHOC~1\LOCALS~1\Temp\RSP1A8.tmp"
+Creating command line "link.exe @C:\DOCUME~1\JUIHOC~1\LOCALS~1\Temp\RSP4.tmp"
 <h3>Output Window</h3>
 Compiling...
-Jll Server.cpp
+Direct.cpp
 Linking...
-Creating temporary file "C:\DOCUME~1\JUIHOC~1\LOCALS~1\Temp\RSP1AA.tmp" with contents
+Creating temporary file "C:\DOCUME~1\JUIHOC~1\LOCALS~1\Temp\RSP6.tmp" with contents
 [
 /nologo /o"Release/Jll Server.bsc" 
 ".\Release\StdAfx.sbr"
@@ -55,7 +55,7 @@ Creating temporary file "C:\DOCUME~1\JUIHOC~1\LOCALS~1\Temp\RSP1AA.tmp" with con
 ".\Release\PortTalk.sbr"
 ".\Release\ProgressBar.sbr"
 ".\Release\TrayIcon.sbr"]
-Creating command line "bscmake.exe @C:\DOCUME~1\JUIHOC~1\LOCALS~1\Temp\RSP1AA.tmp"
+Creating command line "bscmake.exe @C:\DOCUME~1\JUIHOC~1\LOCALS~1\Temp\RSP6.tmp"
 Creating browse info file...
 <h3>Output Window</h3>
 

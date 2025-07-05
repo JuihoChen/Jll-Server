@@ -196,7 +196,7 @@ CAPTION "關於 Jll Server"
 FONT 9, "新細明體"
 BEGIN
     ICON            IDR_MAINFRAME,IDC_STATIC,12,9,20,20
-    LTEXT           "Jll Server Version 0.22",IDC_STATIC_VERSION,45,10,119,8,
+    LTEXT           "Jll Server Version 0.23",IDC_STATIC_VERSION,45,10,119,8,
                     SS_NOPREFIX
     LTEXT           "Copyright (C) 2004-2005",IDC_STATIC,45,25,119,8
     DEFPUSHBUTTON   "確定",IDOK,178,7,50,14,WS_GROUP
@@ -461,8 +461,8 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDC_BUTTON_RESET_DIR    "傳送路徑設回開始路徑"
     IDC_COMBO_FOR_DIR       "開始路徑"
+    IDC_BUTTON_RESET_DIR    "傳送路徑設回開始路徑"
     IDC_BUTTON_SET_DIR      "開始路徑設為傳送路徑"
 END
 

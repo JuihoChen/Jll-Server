@@ -42,7 +42,7 @@ public:
 // Implementation
 public:
 	void Initialize();
-	void CleanUp() const;
+	void CleanUp();
 	BOOL SetCurText( const CString sText );
 	CString GetCurText() const;
 	virtual ~CFolderCombo();
@@ -53,6 +53,9 @@ protected:
 	//}}AFX_MSG
 
 	DECLARE_MESSAGE_MAP()
+
+private:
+	BOOL m_fChanged;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -115,6 +118,7 @@ protected:
 	//}}AFX_MSG
 	afx_msg BOOL OnToolTipNotify(UINT id, NMHDR* pTTTStruct, LRESULT* pResult);
 	DECLARE_MESSAGE_MAP()
+
 private:
 	int m_nTopForText;
 	int m_nLineHeight;

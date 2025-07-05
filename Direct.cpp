@@ -830,6 +830,8 @@ void CDCServer::FormatOutput( LPCTSTR lpszFormat, ... )
 
 UINT CDCServer::DoWork()
 {
+	HANDLE hCurrentThread = ::GetCurrentThread();
+
 	InvalidateOpcode();					// Invalidate Opcode
 
 	TRY
@@ -847,7 +849,7 @@ UINT CDCServer::DoWork()
 			}
 			// Set this thread's priority as high as reasonably possible to
 			// prevent timeslice interrupts.
-			::SetThreadPriority( ::GetCurrentThread(), THREAD_PRIORITY_HIGHEST );
+			::SetThreadPriority( hCurrentThread, THREAD_PRIORITY_HIGHEST );
 			/// In DEBUGGING, m_pThread->SetThreadPriority() claims assertion!
 
 			ReceiveCommand();
@@ -884,7 +886,7 @@ UINT CDCServer::DoWork()
 			}
 
 			// Reset this thread's priority back to normal.
-			::SetThreadPriority( ::GetCurrentThread(), THREAD_PRIORITY_NORMAL );
+			::SetThreadPriority( hCurrentThread, THREAD_PRIORITY_NORMAL );
 		}
 		while( m_bRunning && (GetOpcode() != EndDCC) );
 	}
