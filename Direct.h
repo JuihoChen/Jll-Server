@@ -101,6 +101,7 @@ public:
 	CDCServer( CNibbleModeProto& lpt );
 	~CDCServer();
 	void ParseWorkDir( CString sFolderName );
+	CString& GetWorkDir();
 	virtual BOOL Begin( CWnd* pWndOwner = NULL );
 	virtual void KillThread();
 	BOOL IsRunning() const;
@@ -138,6 +139,8 @@ inline WORD CDirectCable::GetWord( UINT nIndex ) const
 inline void CDirectCable::SetAt( UINT nIndex, WORD wElement )
 	{ ASSERT( nIndex >= 0 && nIndex <= BF_MAXLEN - 1 ); *(WORD FAR*)(m_fpBuffer + nIndex) = wElement; }
 
+inline CString& CDCServer::GetWorkDir()
+	{ return m_sDirName; }
 inline BOOL CDCServer::IsRunning() const
 	{ ASSERT_VALID( this ); return m_pThread && m_bRunning; }
 inline CDirectCable::EOpCode CDCServer::GetOpcode() const

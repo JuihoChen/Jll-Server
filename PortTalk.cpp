@@ -35,6 +35,21 @@ int CPortTalk::OpenPortTalk()
 	int error;
 	DWORD BytesReturned;
 
+	HANDLE m_hLPT1 = CreateFile(
+		"\\\\.\\LPT1",
+		GENERIC_READ,
+		0,									// exclusive access 
+		NULL,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL
+	);
+
+	if( m_hLPT1 == INVALID_HANDLE_VALUE )	// we can't open the drive
+	{
+		TRACE0( "CPortTalk: Couldn't exclusively open LPT1.\n" );
+	}
+
 	// Open PortTalk Driver. If we cannot open it, try installing and starting it.
 	m_hPortTalk = CreateFile(
 		"\\\\.\\PortTalk",
@@ -93,6 +108,10 @@ void CPortTalk::ClosePortTalk()
 	if( m_hPortTalk != INVALID_HANDLE_VALUE )
 		CloseHandle( m_hPortTalk );
 	m_hPortTalk = INVALID_HANDLE_VALUE;
+
+	if( m_hLPT1 != INVALID_HANDLE_VALUE )
+		CloseHandle( m_hLPT1 );
+	m_hLPT1 = INVALID_HANDLE_VALUE;
 }
 
 int CPortTalk::EnableIOPM( WORD wOffset )

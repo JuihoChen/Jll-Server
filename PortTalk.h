@@ -25,6 +25,7 @@ public:
 protected:
 	void StartPortTalkDriver();
 	HANDLE m_hPortTalk;
+	HANDLE m_hLPT1;
 	DWORD m_dwProcessId;
 };
 

@@ -31,7 +31,11 @@ CJllServerView::CJllServerView()
 	// TODO: add construction code here
 	_OutputDebugString( "View constructor...\n" );
 
+	m_cButtonResetDir.SetIcons( IDI_ICON_RESET_DIR_U, IDI_ICON_RESET_DIR_D, IDI_ICON_RESET_DIR_F, IDI_ICON_RESET_DIR_X );
+	m_cButtonSetDir.LoadBitmaps( IDB_BITMAP_SET_DIR_U, IDB_BITMAP_SET_DIR_D, IDB_BITMAP_SET_DIR_F, IDB_BITMAP_SET_DIR_X );
+
 	m_sStartingFolder = GetMyApp()->m_sStartingDir;
+	m_f1stInitialUpdate = TRUE;
 }
 
 CJllServerView::~CJllServerView()
@@ -51,6 +55,9 @@ void CJllServerView::DoDataExchange(CDataExchange* pDX)
 {
 	CFormView::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CJllServerView)
+	DDX_Control(pDX, IDC_BUTTON_SET_DIR, m_cButtonSetDir);
+	DDX_Control(pDX, IDC_BUTTON_RESET_DIR, m_cButtonResetDir);
+	DDX_Control(pDX, IDC_GRP_FRAME, m_cGroupFrame);
 	DDX_Control(pDX, IDC_BUTTON_FOR_DIR, m_cButtonForDir);
 	DDX_Text(pDX, IDC_EDIT_FOR_DIR, m_sStartingFolder);
 	DDV_MaxChars(pDX, m_sStartingFolder, 256);
@@ -63,7 +70,10 @@ void CJllServerView::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CJllServerView, CFormView)
 	//{{AFX_MSG_MAP(CJllServerView)
 	ON_BN_CLICKED(IDC_BUTTON_FOR_DIR, OnButtonForDir)
+	ON_BN_CLICKED(IDC_BUTTON_RESET_DIR, OnButtonResetDir)
+	ON_BN_CLICKED(IDC_BUTTON_SET_DIR, OnButtonSetDir)
 	//}}AFX_MSG_MAP
+	ON_NOTIFY_EX(TTN_NEEDTEXT, 0, OnToolTipNotify)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
@@ -90,12 +100,12 @@ CJllServerDoc* CJllServerView::GetDocument() // non-debug version is inline
 /////////////////////////////////////////////////////////////////////////////
 // CJllServerView message handlers
 
-void CJllServerView::OnButtonForDir() 
+void CJllServerView::OnButtonForDir()
 {
 	// TODO: Add your control notification handler code here
 	_OutputDebugString( "View::Button for Dir. called.\n" );
 
-	// Disable timer to detect the guest temporarily.
+	// Disable timer for detecting the guest temporarily.
 	CMainFrame* pFrame = (CMainFrame*)GetParent();
 	ASSERT_KINDOF( CMainFrame, pFrame );
 	pFrame->OnStopTimer( CMainFrame::nTimerIdDetectGuest );
@@ -128,11 +138,10 @@ void CJllServerView::OnButtonForDir()
 
 		cfdlg.m_ofn.lpstrFile[ wFileOffset-1 ] = 0;		//Nuke the "Junk"
 
-		if( m_sStartingFolder != cfdlg.m_ofn.lpstrFile )
+		if( m_sStartingFolder.CompareNoCase( cfdlg.m_ofn.lpstrFile ) )
 		{
 			m_sStartingFolder = cfdlg.m_ofn.lpstrFile;
 			GetDocument()->FormatOutput( "Starting Folder is changed." );
-
 		}
 		UpdateData( FALSE );
 		// Update directory name in CDCServer class anyway.
@@ -141,7 +150,64 @@ void CJllServerView::OnButtonForDir()
     }
 
 	// Reenable timer to detect the guest after this Dialog.
-	pFrame->OnStartTimer( CMainFrame::nTimerIdDetectGuest );	
+///v0.18***	pFrame->OnStartTimer( CMainFrame::nTimerIdDetectGuest );	
+}
+
+void CJllServerView::OnButtonResetDir()
+{
+	// Disable timer for detecting the guest temporarily.
+	CMainFrame* pFrame = GetMyMainFrame();
+	pFrame->OnStopTimer( CMainFrame::nTimerIdDetectGuest );
+
+	GetDocument()->FormatOutput( "Transferring directory is restored to the Starting Folder." );
+
+	ASSERT_KINDOF( CDCServer, pFrame->m_pTheServer );
+	pFrame->m_pTheServer->ParseWorkDir( m_sStartingFolder );
+}
+
+void CJllServerView::OnButtonSetDir()
+{
+	// Disable timer for detecting the guest temporarily.
+	CMainFrame* pFrame = GetMyMainFrame();
+	pFrame->OnStopTimer( CMainFrame::nTimerIdDetectGuest );
+
+	GetDocument()->FormatOutput( "Starting Folder is set to the Transferring directory." );
+
+	// restore the working folder to a LongPathName.
+	char szLong[_MAX_PATH];
+	::GetLongPathName( pFrame->m_pTheServer->GetWorkDir(), szLong, sizeof szLong );
+
+	m_sStartingFolder = szLong;
+	UpdateData( FALSE );
+}
+
+void CJllServerView::EnableFolderChange(BOOL bEnable /* = TRUE */)
+{
+	if( bEnable )
+	{
+		m_cButtonForDir.EnableWindow( TRUE );
+
+		// restore the working folder to a LongPathName.
+		char szLong[_MAX_PATH];
+		::GetLongPathName( GetMyMainFrame()->m_pTheServer->GetWorkDir(), szLong, sizeof szLong );
+
+		if( m_sStartingFolder.CompareNoCase( szLong ) )
+		{
+			m_cButtonResetDir.EnableWindow( TRUE );
+			m_cButtonSetDir.EnableWindow( TRUE );
+		}
+		else
+		{
+			m_cButtonResetDir.EnableWindow( FALSE );
+			m_cButtonSetDir.EnableWindow( FALSE );
+		}
+	}
+	else
+	{
+		m_cButtonForDir.EnableWindow( FALSE );
+		m_cButtonResetDir.EnableWindow( FALSE );
+		m_cButtonSetDir.EnableWindow( FALSE );
+	}
 }
 
 void CJllServerView::OnDraw(CDC* pDC) 
@@ -209,27 +275,62 @@ void CJllServerView::OnInitialUpdate()
 	
 	// TODO: Add your specialized code here and/or call the base class
 
+	EnableToolTips( TRUE );				// necessary for a windows NOT derived from CFrameWnd
+
+//	m_cButtonResetDir.SizeToContent();
+	m_cButtonSetDir.SizeToContent();
+
 	// You'll typically place the call to SetScaleToFitSize in your override
 	// of the view's OnInitialUpdate member function.
 	//GetParentFrame()->RecalcLayout();
 	//SetScaleToFitSize( CSize( 734, 450 ) );
 	////SetScaleToFitSize( GetTotalSize() );
 
-	CRect edtrect;
-	m_cButtonForDir.GetClientRect( &edtrect );
-
 	TEXTMETRIC tm;
 	CPaintDC dc( this );
 	OnPrepareDC( &dc );
 	dc.GetTextMetrics( &tm );
 
-	CRect rect;							// the initial rect. It's variable!
-	GetClientRect( &rect );
+	CRect rect;
+	m_cGroupFrame.GetClientRect( &rect );
 
-	m_nTopForText = edtrect.bottom * 3 - 4;
+	m_nTopForText = (int)(1.45 * rect.bottom);
 	m_nLineHeight = tm.tmHeight + 2;
+
+	GetClientRect( &rect );				// the initial rect. It's variable!
+
 	m_nNumLines = (rect.bottom - m_nTopForText) / m_nLineHeight - 3;
 	if( m_nNumLines < 20 ) m_nNumLines = 20;
+
+	if( m_f1stInitialUpdate )
+	{
+		m_f1stInitialUpdate = FALSE;
+
+		m_cGroupFrame.GetClientRect( &rect );
+
+		int ncx = rect.right + 0x30;
+		CMainFrame* pFrame = (CMainFrame*)GetParentFrame();
+		ASSERT_KINDOF( CMainFrame, pFrame );
+
+		pFrame->GetWindowRect( &rect );
+
+		if( rect.Width() < ncx )
+		{
+			int scx = ::GetSystemMetrics( SM_CXSCREEN );
+			scx = ( scx >= ncx ) ? (scx - ncx) / 2 : rect.left;
+			pFrame->SetWindowPos(
+				NULL,
+				scx, rect.top,
+				ncx, rect.Height(),
+				SWP_NOZORDER | SWP_NOACTIVATE );	// SWP_NOMOVE
+		}
+
+		// set up the tooltip control....
+		m_cToolTip.Create( this );
+		m_cToolTip.AddTool( &m_cButtonResetDir, IDC_BUTTON_RESET_DIR );
+		m_cToolTip.AddTool( &m_cButtonSetDir, IDC_BUTTON_SET_DIR );
+		m_cToolTip.Activate( TRUE );
+	}
 }
 
 void CJllServerView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
@@ -251,3 +352,29 @@ void CJllServerView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 
 }
 
+BOOL CJllServerView::OnToolTipNotify(UINT id, NMHDR* pNMHDR, LRESULT* pResult )
+{
+	_OutputDebugString( "View::OnToolTipNotify called.\n" );
+
+	TOOLTIPTEXT *pTTT = (TOOLTIPTEXT *)pNMHDR;
+	UINT nID = pNMHDR->idFrom;
+	if( pTTT->uFlags & TTF_IDISHWND )
+	{
+		// idFrom is actually the HWND of the tool
+		nID = ::GetDlgCtrlID( (HWND)nID );
+		if( nID == IDC_BUTTON_FOR_DIR || nID == IDC_EDIT_FOR_DIR )
+		{
+			pTTT->lpszText = MAKEINTRESOURCE( nID );
+			pTTT->hinst = AfxGetResourceHandle();
+			return TRUE;			// message was handled
+		}
+	}
+	return FALSE;
+}
+
+BOOL CJllServerView::PreTranslateMessage(MSG* pMsg) 
+{
+	// TODO: Add your specialized code here and/or call the base class
+	m_cToolTip.RelayEvent( pMsg );
+	return CFormView::PreTranslateMessage(pMsg);
+}

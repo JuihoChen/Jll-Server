@@ -1,6 +1,7 @@
 // Jll Server.cpp : Defines the class behaviors for the application.
 //
 //     Copyright (c) 2004, Compal Electronics, Inc.  All rights reserved.
+//
 //     Ver.    Date             Logs
 //     -----   ------------   -------------
 //     v0.00   OCT 01, 2004   to create.
@@ -19,6 +20,11 @@
 //     v0.17   NOV 16, 2004   avoid multiple instances (codes from Joseph M. Newcomer).
 //             NOV 17, 2004   create an event notifying worker thread been killed.
 //             NOV 22, 2004   add ability for timeout check in block transfer.
+//     v0.18   NOV 25, 2004   drop-in status bar progress control (from Chris Maunder).
+//                            not calling PreTranslateMessage makes WM_TIMER workable.
+//             NOV 28, 2004   ports transparent bitmap buttons (from bhushan_at ).
+//             NOV 29, 2004   add tooltips to buttons by two different approaches.
+//             DEC 03, 2004   a system tray control is added to CFrameWnd.
 
 #include "stdafx.h"
 #include "Jll Server.h"
@@ -106,10 +112,23 @@ BOOL CJllServerApp::AvoidMultipleInstances() const
 		{ /* pop up */
 			::SetForegroundWindow( hOther );
 
-			if( IsIconic( hOther ) )
+			if( ::IsIconic( hOther ) )
 			{ /* restore */
 				::ShowWindow( hOther, SW_RESTORE );
 			} /* restore */
+
+			else if( !::IsWindowVisible( hOther ) )
+			{ /* restore from system tray */
+				DWORD result;
+				LRESULT ok = ::SendMessageTimeout(
+					hOther,
+					UWM_NOTIFY_ICON,
+					IDR_MAINFRAME,
+					WM_LBUTTONDBLCLK,
+					SMTO_BLOCK | SMTO_NOTIMEOUTIFNOTHUNG,
+					200,
+					&result );
+			} /* restore from system tray */
 		} /* pop up */
 
 		// Display something that tells the user
@@ -230,17 +249,20 @@ BOOL CJllServerApp::InitInstance()
 		return FALSE;
 	}
 
+	((CMainFrame*)m_pMainWnd)->FormatOutput(
+		"Found a printer port on 0x%x in the registry.", m_lptNibble.GetBaseAddr() );
+
 	// The one and only window has been initialized, so show and update it.
 	m_pMainWnd->ShowWindow(SW_SHOW);
 	m_pMainWnd->UpdateWindow();
-
-	((CMainFrame*)m_pMainWnd)->FormatOutput(
-		"Found a printer port on 0x%x in the registry.", m_lptNibble.GetBaseAddr() );
+	m_pMainWnd->SetWindowPos( &CWnd::wndTopMost, 0,0,0,0, SWP_NOSIZE|SWP_NOMOVE );
+	m_pMainWnd->SetWindowPos( &CWnd::wndNoTopMost, 0,0,0,0, SWP_NOSIZE|SWP_NOMOVE );
+	m_pMainWnd->SetForegroundWindow();
 
 	((CMainFrame*)m_pMainWnd)->m_pTheServer = new CDCServer( m_lptNibble );
 	ASSERT_KINDOF( CDCServer, ((CMainFrame*)m_pMainWnd)->m_pTheServer );
 	((CMainFrame*)m_pMainWnd)->m_pTheServer->ParseWorkDir( m_sStartingDir );
-	((CMainFrame*)m_pMainWnd)->OnStartTimer( CMainFrame::nTimerIdDetectGuest );
+///v0.18***	((CMainFrame*)m_pMainWnd)->OnStartTimer( CMainFrame::nTimerIdDetectGuest );
 
 	_OutputDebugString( "CJllServerApp>Leave App's InitInstance.\n" );
 	return TRUE;
@@ -312,14 +334,17 @@ void CJllServerApp::LoadProfileStrings()
 {
 	CString strSection    = "Jll Section";
 	CString strStringItem = "Starting Directory";
-	char szPath[ 1024 ];			// Buffer to hold path information
+	CString strIntItem    = "Detecting Speaker";
 
 	m_sStartingDir = GetProfileString( strSection, strStringItem, "C:\\" );
 	if( ::SetCurrentDirectory( m_sStartingDir ) == FALSE )
 	{
+		char szPath[ 1024 ];			// Buffer to hold path information
 		::GetCurrentDirectory( sizeof szPath, szPath );
 		m_sStartingDir = szPath;
 	}
+
+	m_bDetectSpkOn = GetProfileInt( strSection, strIntItem, 0 );
 }
 
 void CJllServerApp::StoreProfileStrings()

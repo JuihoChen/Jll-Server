@@ -10,8 +10,10 @@
 #endif // _MSC_VER > 1000
 
 #include "except.h"
+#include "ProgressBar.h"
+#include "TrayIcon.h"
 
-#define UWM_COMMU_LOOP	(WM_APP+10)		// Message to incicate Comm. Loop starts
+#define UWM_CPY_PROGRS	(WM_APP+10)		// Message to report progress in copy
 #define UWM_EXCEPT_BOX	(WM_APP+11)		// Message to popup a dialog for exception
 #define UWM_SERVER_END	(WM_APP+12)		// Message to indicate end of server thread
 #define UWM_ADD_STRING	(WM_APP+13)		// Message to add string to CJllServerDoc
@@ -49,7 +51,6 @@ public:
 	public:
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 	virtual BOOL DestroyWindow();
-	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	protected:
 	//}}AFX_VIRTUAL
 
@@ -59,6 +60,7 @@ public:
 	UINT OnStartTimer(UINT nIDEvent);
 	void OnStopTimer(UINT nIDEvent);
 	void CheckReTimerToDetectGuest();
+	void SetupTrayIcon();
 	virtual ~CMainFrame();
 #ifdef _DEBUG
 	virtual void AssertValid() const;
@@ -68,6 +70,9 @@ public:
 protected:  // control bar embedded members
 	CStatusBar	m_wndStatusBar;
 	CToolBar	m_wndToolBar;
+	CProgressBar m_cProgressBar;
+	CTrayIcon	m_cTrayIcon;
+	HICON		m_hIconDisconnect, m_hIconConnected;
 	UINT		m_nTimerDetectGuest;
 
 // Generated message map functions
@@ -78,8 +83,18 @@ protected:
 	afx_msg void OnUpdateFileSaveAs(CCmdUI* pCmdUI);
 	afx_msg void OnTimer(UINT nIDEvent);
 	afx_msg void OnClose();
+	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
+	afx_msg void OnTaskbarMenuShow();
 	//}}AFX_MSG
+	afx_msg void OnUpdatePercentDone(CCmdUI* pCmdUI);
+	afx_msg void OnDetectSpkOn(UINT nID);
+	afx_msg LRESULT OnExceptionBox(WPARAM, LPARAM);
+	afx_msg LRESULT OnServerEndJob(WPARAM, LPARAM);
+	afx_msg LRESULT OnAddString(WPARAM, LPARAM);
+	afx_msg LRESULT OnCopyProgress(WPARAM, LPARAM);
 	afx_msg LRESULT OnAreYouMe(WPARAM, LPARAM);
+	afx_msg LRESULT OnTaskBarCreated(WPARAM, LPARAM);
+	afx_msg void OnNotifyIcon(WPARAM, LPARAM);
 	DECLARE_MESSAGE_MAP()
 };
 

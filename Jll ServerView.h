@@ -9,6 +9,7 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#include "ButtonStyle.h"
 
 /////////////////////////////////////////////////////////////////////////////
 // CJllServerView form view
@@ -27,15 +28,20 @@ protected:
 public:
 	//{{AFX_DATA(CJllServerView)
 	enum { IDD = IDD_DIALOGBAR };
+	CBitmapButton m_cButtonSetDir;
+	CButtonStyle m_cButtonResetDir;
+	CButton	m_cGroupFrame;
 	CButton	m_cButtonForDir;
 	CString	m_sStartingFolder;
 	//}}AFX_DATA
 
 // Attributes
 public:
+	CToolTipCtrl m_cToolTip;
 
 // Operations
 public:
+	void EnableFolderChange(BOOL bEnable = TRUE);
 	void InvalidateForNewLine();
 	CJllServerDoc* GetDocument();
 	int GetLinesInView() const { return m_nNumLines; }
@@ -45,6 +51,7 @@ public:
 	//{{AFX_VIRTUAL(CJllServerView)
 	public:
 	virtual void OnInitialUpdate();
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	virtual void OnDraw(CDC* pDC);
@@ -62,12 +69,16 @@ protected:
 	// Generated message map functions
 	//{{AFX_MSG(CJllServerView)
 	afx_msg void OnButtonForDir();
+	afx_msg void OnButtonResetDir();
+	afx_msg void OnButtonSetDir();
 	//}}AFX_MSG
+	afx_msg BOOL OnToolTipNotify(UINT id, NMHDR* pTTTStruct, LRESULT* pResult);
 	DECLARE_MESSAGE_MAP()
 private:
 	int m_nTopForText;
 	int m_nLineHeight;
 	int m_nNumLines;
+	BOOL m_f1stInitialUpdate;
 };
 
 #ifndef _DEBUG  // debug version in Jll ServerView.cpp

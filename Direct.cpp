@@ -346,6 +346,9 @@ void CDCServer::SendFileInfo()
 
 	(this->*m_pfnSendFromBuffer)( nAllocLen );
 
+	// report copying progress.
+	::PostMessage( m_hWndOwner, UWM_CPY_PROGRS, 0, (LPARAM) m_fiInfo.m_size );
+
 #ifdef _DEBUG
 	m_fiInfo.Dump( afxDump );
 #endif
@@ -397,6 +400,9 @@ void CDCServer::SendData()
 		m_fiInfo.m_fiArchive.Close();
 		m_fiInfo.m_bFileInUse = FALSE;
 	}
+
+	// report copying progress.
+	::PostMessage( m_hWndOwner, UWM_CPY_PROGRS, 1, (LPARAM) dwStartAddress + wTransferLen );
 }
 
 void CDCServer::ChangeDir()
@@ -722,8 +728,7 @@ UINT CDCServer::DoWork()
 			// Set this thread's priority as high as reasonably possible to
 			// prevent timeslice interrupts.
 			::SetThreadPriority( ::GetCurrentThread(), THREAD_PRIORITY_HIGHEST );
-			/// m_pThread->SetThreadPriority() claims assertion!
-			////*v0.17* m_pThread->SetThreadPriority( THREAD_PRIORITY_TIME_CRITICAL );
+			/// In DEBUGGING, m_pThread->SetThreadPriority() claims assertion!
 
 			ReceiveCommand();
 

@@ -32,6 +32,7 @@ public:
 	CJllServerApp();
 
 	CString m_sStartingDir;
+	BOOL m_bDetectSpkOn;
 	CNibbleModeProto m_lptNibble;
 
 // Overrides

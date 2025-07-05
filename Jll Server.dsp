@@ -99,6 +99,10 @@ SOURCE=.\BArchive.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\ButtonStyle.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\Direct.cpp
 # End Source File
 # Begin Source File
@@ -139,8 +143,16 @@ SOURCE=.\PortTalk.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=.\ProgressBar.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=.\StdAfx.cpp
 # ADD CPP /Yc"stdafx.h"
+# End Source File
+# Begin Source File
+
+SOURCE=.\TrayIcon.cpp
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -149,6 +161,10 @@ SOURCE=.\StdAfx.cpp
 # Begin Source File
 
 SOURCE=.\BArchive.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\ButtonStyle.h
 # End Source File
 # Begin Source File
 
@@ -188,16 +204,52 @@ SOURCE=.\PortTalk.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\ProgressBar.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\Resource.h
 # End Source File
 # Begin Source File
 
 SOURCE=.\StdAfx.h
 # End Source File
+# Begin Source File
+
+SOURCE=.\TrayIcon.h
+# End Source File
 # End Group
 # Begin Group "Resource Files"
 
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
+# Begin Source File
+
+SOURCE=.\res\bitmap1.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\bitmap_r.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\bitmap_s.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\bmp00001.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\bmp00002.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\bmp00003.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\bmp00004.bmp
+# End Source File
 # Begin Source File
 
 SOURCE=..\ChooseDir\res\closed.bmp
@@ -213,6 +265,30 @@ SOURCE=..\ChooseDir\res\closedSel.bmp
 # Begin Source File
 
 SOURCE=.\res\closedSel.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\HANDSHAK.ICO
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\ico00001.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\ico00002.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\ico00003.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\icon1.ico
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\icon_res.ico
 # End Source File
 # Begin Source File
 
@@ -248,11 +324,23 @@ SOURCE=.\res\PNPPORTS.ICO
 # End Source File
 # Begin Source File
 
+SOURCE=.\res\ports.ico
+# End Source File
+# Begin Source File
+
 SOURCE=.\res\POSTL.ICO
 # End Source File
 # Begin Source File
 
+SOURCE=.\res\SPEAKER.BMP
+# End Source File
+# Begin Source File
+
 SOURCE=.\res\Toolbar.bmp
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\UNDO.BMP
 # End Source File
 # End Group
 # Begin Source File

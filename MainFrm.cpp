@@ -27,13 +27,24 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_UPDATE_COMMAND_UI(ID_FILE_SAVE_AS, OnUpdateFileSaveAs)
 	ON_WM_TIMER()
 	ON_WM_CLOSE()
+	ON_WM_SYSCOMMAND()
+	ON_COMMAND(IDR_TASKBAR_MENU_SHOW, OnTaskbarMenuShow)
 	//}}AFX_MSG_MAP
+	ON_MESSAGE(UWM_CPY_PROGRS, OnCopyProgress)
+	ON_MESSAGE(UWM_EXCEPT_BOX, OnExceptionBox)
+	ON_MESSAGE(UWM_SERVER_END, OnServerEndJob)
+	ON_MESSAGE(UWM_ADD_STRING, OnAddString)
+	///ON_UPDATE_COMMAND_UI(ID_PERCENT_DONE, OnUpdatePercentDone)
+	ON_COMMAND_RANGE(ID_DETECT_SPK_ON, ID_DETECT_SPK_OFF, OnDetectSpkOn)
 	ON_REGISTERED_MESSAGE(UWM_ARE_YOU_ME, OnAreYouMe)
+	ON_REGISTERED_MESSAGE(UWM_TASKBAR_CREATED, OnTaskBarCreated)
+	ON_REGISTERED_MESSAGE(UWM_NOTIFY_ICON, OnNotifyIcon)
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
 {
 	ID_SEPARATOR,           // status line indicator
+	ID_PERCENT_DONE,
 	ID_INDICATOR_CAPS,
 	ID_INDICATOR_NUM,
 	ID_INDICATOR_SCRL,
@@ -78,7 +89,8 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	if (!m_wndToolBar.CreateEx(this, TBSTYLE_FLAT, WS_CHILD | WS_VISIBLE | CBRS_TOP
 		| CBRS_GRIPPER | CBRS_TOOLTIPS | CBRS_FLYBY | CBRS_SIZE_DYNAMIC) ||
-		!m_wndToolBar.LoadToolBar(IDR_MAINFRAME))
+		!m_wndToolBar.LoadBitmap(IDR_MAINFRAME))
+		////!m_wndToolBar.LoadToolBar(IDR_MAINFRAME))
 	{
 		TRACE0("Failed to create toolbar\n");
 		return -1;      // fail to create
@@ -92,11 +104,24 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		return -1;      // fail to create
 	}
 
+	OnDetectSpkOn( GetMyApp()->m_bDetectSpkOn ? ID_DETECT_SPK_ON : ID_DETECT_SPK_OFF );
+
 	// TODO: Delete these three lines if you don't want the toolbar to
 	//  be dockable
 	m_wndToolBar.EnableDocking(CBRS_ALIGN_ANY);
 	EnableDocking(CBRS_ALIGN_ANY);
 	DockControlBar(&m_wndToolBar);
+
+	// Reserve adequate space for a progress bar.
+	int nIndex, cxWidth;
+	UINT nID, nStyle;
+	nIndex = m_wndStatusBar.CommandToIndex( ID_PERCENT_DONE );
+	m_wndStatusBar.GetPaneInfo( nIndex, nID, nStyle, cxWidth );
+	m_wndStatusBar.SetPaneInfo( nIndex, nID, nStyle, cxWidth * 5 );
+	///m_cProgressBar.Create( _T("100%"), 100, 100, TRUE, nIndex );
+
+	// Prepare data to system tray.
+	SetupTrayIcon();
 
 	// Put the version string in about box onto the frame title.
 	CString sz;
@@ -105,9 +130,22 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	aboutDlg.GetDlgItemText( IDC_STATIC_VERSION, sz );
 	aboutDlg.DestroyWindow();
 	SetTitle( sz );
-	SetForegroundWindow();
 
 	return 0;
+}
+
+void CMainFrame::SetupTrayIcon()
+{
+	MouseMsgHandlerPtr *aHandler = new MouseMsgHandlerPtr[2];
+
+	aHandler[0] = new CLeftMouseDblClickMsgHandler();
+	aHandler[1] = new CRightMouseClickMsgHandler( IDR_TASKBAR_MENU );
+
+	m_hIconDisconnect = ::LoadIcon( ::AfxGetInstanceHandle(), MAKEINTRESOURCE(IDI_ICON_DISCONN) );
+	m_hIconConnected  = ::LoadIcon( ::AfxGetInstanceHandle(), MAKEINTRESOURCE(IDI_ICON_CONNECT) );
+
+	m_cTrayIcon.SetTrayIcon( m_hWnd, IDR_MAINFRAME, m_hIconDisconnect, AfxGetAppName() );
+	m_cTrayIcon.SetMouseMsgHandler( aHandler, 2 );
 }
 
 BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
@@ -119,7 +157,7 @@ BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 	// TODO: Modify the Window class or styles here by modifying
 	//  the CREATESTRUCT cs
 	///cs.style &= ~FWS_ADDTOTITLE;
-
+	
 	return TRUE;
 }
 
@@ -144,14 +182,19 @@ void CMainFrame::Dump(CDumpContext& dc) const
 
 void CMainFrame::OnUpdateFileSave(CCmdUI* pCmdUI) 
 {
-	// TODO: Add your command update UI handler code here
 	pCmdUI->Enable( FALSE );
 }
 
 void CMainFrame::OnUpdateFileSaveAs(CCmdUI* pCmdUI) 
 {
-	// TODO: Add your command update UI handler code here
 	pCmdUI->Enable( FALSE );
+}
+
+void CMainFrame::OnUpdatePercentDone(CCmdUI* pCmdUI)
+{
+	// It is necessary to enable the percent-done status bar pane, so that
+	// the text will be displayed.
+	pCmdUI->Enable();
 }
 
 void CMainFrame::OnTimer(UINT nIDEvent) 
@@ -160,22 +203,28 @@ void CMainFrame::OnTimer(UINT nIDEvent)
 	switch( nIDEvent )
 	{
 	case nTimerIdDetectGuest:
-#ifdef _DEBUG
-		MessageBeep( 0xFFFFFFFF );  // Beep
-#endif
+
+		if( GetMyApp()->m_bDetectSpkOn )
+		{
+			MessageBeep( 0xFFFFFFFF );		// Beep
+		}
+
 		GetMyApp()->m_lptNibble.EnterIdleCondition();
 
 		if( !GetMyApp()->m_lptNibble.DetectTheGuest() )
+		{
 			GetMyApp()->m_lptNibble.EnterIdleCondition();
-
+		}
 		else
 		{
 			OnStopTimer( nTimerIdDetectGuest );
 	 		FormatOutput( "the Guest is detected... %s",
 				CTime::GetCurrentTime().Format( "at %H:%M:%S on %A, %B %d, %Y" ) );
-			GetActiveView()->m_cButtonForDir.EnableWindow( FALSE );
+			GetActiveView()->EnableFolderChange( FALSE );
 			m_pTheServer->Begin( this );
+			m_cTrayIcon.ModifyIcon( m_hIconConnected, m_pTheServer->GetWorkDir() );
 		}
+
 		break;
 	}
 
@@ -191,7 +240,7 @@ BOOL CMainFrame::DestroyWindow()
 		delete m_pTheServer;
 		m_pTheServer = 0;
 	}
-	if( m_ExceptDlg.m_hWnd )
+	if( IsWindow( m_ExceptDlg.GetSafeHwnd() ) )
 	{
 		m_ExceptDlg.DestroyWindow();
 		m_ExceptDlg.m_hWnd = 0;			// Invalidate Handle evev though redundant!
@@ -245,57 +294,72 @@ void CMainFrame::CheckReTimerToDetectGuest()
 {
 	if( !m_pTheServer->IsRunning() && m_nTimerDetectGuest == 0 )
 	{
+		GetActiveView()->EnableFolderChange( TRUE );
+
 		// Reenable timer to detect the guest after this Dialog.
-		GetActiveView()->m_cButtonForDir.EnableWindow( TRUE );
 		OnStartTimer( nTimerIdDetectGuest );	
 	}
 }
 
-/****************************************************************************
-	Function:	PreTranslateMessage()
-	Purpose:	Look for the message that indicates the path has changed so
-				the edit box can be updated properly.
-				NOTE: DON'T ADD YOUR OWN MESSAGE HANDLER AND MESSAGE MAP ENTRY.
-				For whatever reason, this causes an access violation crash.
-				If you do it this way, everything works just fine.
-	Inputs:		MSG* pMsg -- The message information
-	Outputs:	BOOL -- Whether or not the operation succeeded
-****************************************************************************/
-BOOL CMainFrame::PreTranslateMessage(MSG* pMsg) 
+LRESULT CMainFrame::OnExceptionBox( WPARAM wParam, LPARAM lParam )
 {
-	// TODO: Add your specialized code here and/or call the base class
-	switch( pMsg->message )
+	if( IsWindow( m_ExceptDlg.GetSafeHwnd() ) ) {
+		m_ExceptDlg.Invalidate( TRUE );
+	}
+	else {
+		m_ExceptDlg.Create( IDD_EXCEPTBOX, this );
+	}
+	m_ExceptDlg.UpdateData( FALSE );			// Update data in CEdit control.
+	m_ExceptDlg.ShowWindow( SW_SHOW );
+	m_ExceptDlg.SetForegroundWindow();
+	m_ExceptDlg.UpdateWindow();
+	return 0;
+}
+
+LRESULT CMainFrame::OnServerEndJob( WPARAM wParam, LPARAM lParam )
+{
+ 	FormatOutput( "the Guest is disconnected... %s", CTime::GetCurrentTime().Format( "at %H:%M:%S" ) );
+	GetActiveView()->EnableFolderChange( TRUE );
+///v0.18***	OnStartTimer( nTimerIdDetectGuest );
+	m_cTrayIcon.ModifyIcon( m_hIconDisconnect, m_pTheServer->GetWorkDir() );
+	return 0;
+}
+
+LRESULT CMainFrame::OnAddString( WPARAM wParam, LPARAM lParam )
+{
+	CString* ps = (CString*) lParam;
+ 	FormatOutput( *ps );
+	delete ps;
+	return 0;
+}
+
+LRESULT CMainFrame::OnCopyProgress( WPARAM wParam, LPARAM lParam )
+{
+	static DWORD dwFileSize = 0;
+	UINT nPercentDone = 100;
+
+	if( wParam == 0 )
 	{
-	case UWM_COMMU_LOOP:
-	case UWM_SERVER_END:
-	 	FormatOutput( "the Guest is disconnected... %s",
-			CTime::GetCurrentTime().Format( "at %H:%M:%S" ) );
-		GetActiveView()->m_cButtonForDir.EnableWindow( TRUE );
-		OnStartTimer( nTimerIdDetectGuest );
-		return TRUE;
-
-	case UWM_EXCEPT_BOX:
-		if( m_ExceptDlg.m_hWnd ) {
-			m_ExceptDlg.Invalidate( TRUE );
-		}
-		else {
-			m_ExceptDlg.Create( IDD_EXCEPTBOX, this );
-		}
-		m_ExceptDlg.UpdateData( FALSE );		// Update data in CEdit control.
-		m_ExceptDlg.ShowWindow( SW_SHOW );
-		m_ExceptDlg.UpdateWindow();
-		return TRUE;
-
-	case UWM_ADD_STRING:
-		{
-			CString* ps = (CString*) pMsg->lParam;
-		 	FormatOutput( *ps );
-			delete ps;
-		}
-		return TRUE;
+		dwFileSize = lParam;
+		nPercentDone = 0;
+	}
+	else if( dwFileSize > (DWORD) lParam )
+	{
+		nPercentDone = (lParam * 100) / dwFileSize;
 	}
 
-	return CFrameWnd::PreTranslateMessage(pMsg);
+	CString strPercentDone;
+	strPercentDone.Format( "%i%%", nPercentDone );
+	//m_wndStatusBar.SetPaneText( m_wndStatusBar.CommandToIndex( ID_PERCENT_DONE ), strPercentDone );
+	//m_wndStatusBar.UpdateWindow();
+	if( !IsWindow( m_cProgressBar.GetSafeHwnd() ) )
+	{
+		m_cProgressBar.Create( _T("100%"), 100, 100, TRUE, m_wndStatusBar.CommandToIndex( ID_PERCENT_DONE ) );
+	}
+	m_cProgressBar.SetText( strPercentDone );
+	m_cProgressBar.SetPos( nPercentDone );
+
+	return 0;
 }
 
 // Registered message (messages >= 0xC000) must be handled in a MESSAGE_MAP entry.
@@ -305,7 +369,7 @@ LRESULT CMainFrame::OnAreYouMe( WPARAM, LPARAM )
 	return UWM_ARE_YOU_ME;
 }
 
-void CMainFrame::OnClose() 
+void CMainFrame::OnClose()
 {
 	// TODO: Add your message handler code here and/or call default
 	_OutputDebugString( "Main frame>OnClose.\n" );
@@ -329,3 +393,65 @@ void CMainFrame::OnClose()
 	CFrameWnd::OnClose();
 }
 
+void CMainFrame::OnDetectSpkOn(UINT nID) 
+{
+	// Set the toolbar to show only partial commmand list
+	m_wndToolBar.SetButtons( NULL, 11 );
+	
+	m_wndToolBar.SetButtonInfo( 0, ID_FILE_NEW, TBBS_BUTTON, 0 );
+	m_wndToolBar.SetButtonInfo( 1, ID_FILE_OPEN, TBBS_BUTTON, 1 );
+	m_wndToolBar.SetButtonInfo( 2, ID_FILE_SAVE, TBBS_BUTTON, 2 );
+	m_wndToolBar.SetButtonInfo( 3, ID_SEPARATOR, TBBS_SEPARATOR, 6 );
+	m_wndToolBar.SetButtonInfo( 4, ID_EDIT_CUT, TBBS_BUTTON, 3 );
+	m_wndToolBar.SetButtonInfo( 5, ID_EDIT_COPY, TBBS_BUTTON, 4 );
+	m_wndToolBar.SetButtonInfo( 6, ID_EDIT_PASTE, TBBS_BUTTON, 5 );
+	m_wndToolBar.SetButtonInfo( 7, ID_SEPARATOR, TBBS_SEPARATOR, 6 );
+	m_wndToolBar.SetButtonInfo( 8, ID_APP_ABOUT, TBBS_BUTTON, 7 );
+	m_wndToolBar.SetButtonInfo( 9, ID_SEPARATOR, TBBS_SEPARATOR, 6 );
+
+	if( nID == ID_DETECT_SPK_ON )
+	{
+		m_wndToolBar.SetButtonInfo( 10, ID_DETECT_SPK_OFF, TBBS_BUTTON, 9 );
+		GetMyApp()->m_bDetectSpkOn = 1;
+	}
+	else
+	{
+		m_wndToolBar.SetButtonInfo( 10, ID_DETECT_SPK_ON, TBBS_BUTTON, 8 );
+		GetMyApp()->m_bDetectSpkOn = 0;
+	}
+
+	// invalidate the call update handlers before painting
+	m_wndToolBar.Invalidate();	
+}
+
+void CMainFrame::OnSysCommand(UINT nID, LPARAM lParam) 
+{
+	// In WM_SYSCOMMAND messages, the four low-order bits of the nID parameter are
+	// used internally by Windows. When an application tests the value of nID, it
+	// must combine the value 0xFFF0 with the nID value by using the bitwise-AND
+	// operator to obtain the correct result.
+	if( (nID & 0xFFF0) == SC_MINIMIZE )
+	{
+		HICON hIcon = m_pTheServer->IsRunning() ? m_hIconConnected : m_hIconDisconnect;
+		m_cTrayIcon.HideWindow( hIcon );
+	}
+	else
+		CFrameWnd::OnSysCommand( nID, lParam );
+}
+
+LRESULT CMainFrame::OnTaskBarCreated(WPARAM wParam, LPARAM lParam)
+{
+	_OutputDebugString( "Main frame>OnTaskBarCreated.\n" );
+
+	return m_cTrayIcon.OnTaskBarCreated( wParam, lParam );
+}
+
+void CMainFrame::OnNotifyIcon(WPARAM wParam, LPARAM lParam) 
+{
+	m_cTrayIcon.OnNotifyIcon( wParam, lParam );
+}
+
+void CMainFrame::OnTaskbarMenuShow() 
+{
+	m_cTrayIcon.RestoreWindow();
+}
