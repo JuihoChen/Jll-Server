@@ -244,6 +244,14 @@ SOURCE=.\res\openSel.bmp
 # End Source File
 # Begin Source File
 
+SOURCE=.\res\PNPPORTS.ICO
+# End Source File
+# Begin Source File
+
+SOURCE=.\res\POSTL.ICO
+# End Source File
+# Begin Source File
+
 SOURCE=.\res\Toolbar.bmp
 # End Source File
 # End Group

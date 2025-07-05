@@ -66,8 +66,9 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDR_MAINFRAME           ICON    DISCARDABLE     "res\\Jll Server.ico"
-IDR_JLLSERTYPE          ICON    DISCARDABLE     "res\\Jll ServerDoc.ico"
+IDR_MAINFRAME           ICON    DISCARDABLE     "res\\PNPPORTS.ICO"
+IDI_APPICON1            ICON    DISCARDABLE     "res\\Jll Server.ico"
+IDR_APPICON2            ICON    DISCARDABLE     "res\\POSTL.ICO"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -168,22 +169,22 @@ STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "關於 Jll Server"
 FONT 9, "新細明體"
 BEGIN
-    ICON            IDR_MAINFRAME,IDC_STATIC,11,17,20,20
-    LTEXT           "Jll Server Version 0.16a",IDC_STATIC_VERSION,40,10,119,
-                    8,SS_NOPREFIX
-    LTEXT           "Copyright (C) 2004",IDC_STATIC,40,25,119,8
+    ICON            IDR_MAINFRAME,IDC_STATIC,12,9,21,21
+    LTEXT           "Jll Server Version 0.17",IDC_STATIC_VERSION,45,10,119,8,
+                    SS_NOPREFIX
+    LTEXT           "Copyright (C) 2004",IDC_STATIC,45,25,119,8
     DEFPUSHBUTTON   "確定",IDOK,178,7,50,14,WS_GROUP
 END
 
 IDD_DIALOGBAR DIALOGEX 0, 0, 366, 30
-STYLE WS_CHILD | WS_BORDER
+STYLE WS_CHILD
 FONT 10, "Century Gothic"
 BEGIN
-    PUSHBUTTON      "&...",IDC_BUTTON_FOR_DIR,316,10,12,13,BS_VCENTER
+    PUSHBUTTON      "&...",IDC_BUTTON_FOR_DIR,315,10,12,13,BS_VCENTER
     EDITTEXT        IDC_EDIT_FOR_DIR,66,11,242,12,ES_AUTOHSCROLL | 
                     ES_READONLY,WS_EX_STATICEDGE
     LTEXT           "Starting Folder:",IDC_STATIC,11,11,49,12,SS_CENTERIMAGE
-    GROUPBOX        "",IDC_STATIC_GRP,4,1,353,26,WS_GROUP
+    GROUPBOX        "",IDC_GRP_FRAME,4,1,353,26,WS_GROUP
 END
 
 IDD_FILEOPENORD DIALOG DISCARDABLE  109, 35, 219, 169
@@ -222,7 +223,7 @@ CAPTION "Exception from Jll Server"
 FONT 10, "System"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,143,4,50,14
-    ICON            IDR_JLLSERTYPE,IDC_STATIC,7,4,20,20
+    ICON            IDR_APPICON2,IDR_APPICON2,14,4,20,20
     EDITTEXT        IDC_EXCEPTEDIT,7,26,186,61,ES_MULTILINE | ES_AUTOVSCROLL | 
                     ES_READONLY | WS_VSCROLL
 END

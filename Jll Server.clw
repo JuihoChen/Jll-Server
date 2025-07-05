@@ -2,7 +2,7 @@
 
 [General Info]
 Version=1
-LastClass=CExceptDlg
+LastClass=CJllServerView
 LastTemplate=CDialog
 NewFileInclude1=#include "stdafx.h"
 NewFileInclude2=#include "Jll Server.h"
@@ -15,9 +15,9 @@ Class3=CJllServerView
 Class4=CMainFrame
 
 ResourceCount=7
-Resource1=IDD_ABOUTBOX
+Resource1=IDR_MAINFRAME
 Class5=CAboutDlg
-Resource2=IDR_MAINFRAME
+Resource2=IDD_ABOUTBOX
 Resource3=IDD_DIALOGBAR (English (U.S.))
 Resource4=IDD_FILEOPENORD
 Resource5=IDD_CHOOSEDIR_DIALOG (English (U.S.))
@@ -148,7 +148,7 @@ ControlCount=4
 Control1=IDC_BUTTON_FOR_DIR,button,1342245888
 Control2=IDC_EDIT_FOR_DIR,edit,1350633600
 Control3=IDC_STATIC,static,1342308864
-Control4=IDC_STATIC_GRP,button,1342308359
+Control4=IDC_GRP_FRAME,button,1342308359
 
 [DLG:IDD_CHOOSEDIR_DIALOG (English (U.S.))]
 Type=1
@@ -193,7 +193,7 @@ Type=1
 Class=CExceptDlg
 ControlCount=3
 Control1=IDOK,button,1342242817
-Control2=IDC_STATIC,static,1342177283
+Control2=IDR_APPICON2,static,1342177283
 Control3=IDC_EXCEPTEDIT,edit,1352730692
 
 [DLG:IDD_FILEOPENORD]

@@ -111,7 +111,6 @@ protected:
 	///void SetStatus();
 	///void WriteFile( DWORD dwStart, UINT nLen, CDirectCable& dcc );
 	void ReadFile( DWORD dwStart, UINT nLen, CDirectCable& dcc );
-	UINT Get_CRC_CheckSum( PVOID pBuffer, ULONG ulSize );
 private:
 	CTimeDos m_mtime;				// data & time the file modified
 	LONG m_size;					// file size in bytes

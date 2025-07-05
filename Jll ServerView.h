@@ -27,6 +27,7 @@ protected:
 public:
 	//{{AFX_DATA(CJllServerView)
 	enum { IDD = IDD_DIALOGBAR };
+	CButton	m_cButtonForDir;
 	CString	m_sStartingFolder;
 	//}}AFX_DATA
 

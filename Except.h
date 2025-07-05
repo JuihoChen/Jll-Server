@@ -64,6 +64,7 @@ class CTimerException : public CExcptClass
 	DECLARE_DYNAMIC( CTimerException )
 public:
 	CTimerException( CString& rMsg );
+	CTimerException( LPCTSTR pMessage ) { m_strError = pMessage; }
 	virtual void Handler() const;
 private:
 	CString m_strError;
@@ -99,9 +100,19 @@ class QPCTimer : public CObject
 {
 public:
 	QPCTimer();
+	void SetTimer( int nSec )
+		{ m_i64Start = GetQPCTime(); m_i64Interval = m_i64Freq * nSec; }
+	void ResetCounter()
+		{ m_nCountBeforeCheck = 0; }
+    void CounterExceedToCheck( int nNum = 100 )
+		{ if( m_nCountBeforeCheck <= nNum ) m_nCountBeforeCheck ++; else CheckTimeout(); }
+	void CheckTimeout() const;
 	static __int64 GetQPCTime();
 	static void Delay( __int64 count );
 protected:
+	int m_nCountBeforeCheck;
+	__int64 m_i64Start;
+	__int64 m_i64Interval;
 	__int64 m_i64Freq;
 	static __int64 m_i64Multiplier;
 	static const __int64 m_i64CountForOneSec;

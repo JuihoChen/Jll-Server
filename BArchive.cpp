@@ -127,7 +127,6 @@ void CBArchive::AssertValid() const
 // definition for static member.
 CFile CFileInfo::m_fiArchive;
 BOOL CFileInfo::m_bFileInUse = FALSE;
-BOOL CFileInfo::m_bUseCRC = FALSE;
 
 void CFileInfo::GetStatus()
 // a GetStatus member is defined for reasons:
@@ -198,39 +197,6 @@ void CFileInfo::ReadFile( DWORD dwStart, UINT nLen, CDirectCable& dcc )
 	}
 	m_fiArchive.Seek( dwStart, CFile::begin );
 	m_fiArchive.Read( dcc.m_fpBuffer, nLen );
-
-	if( m_bUseCRC )
-	{
-		dcc.SetAt( nLen, (WORD) Get_CRC_CheckSum( dcc.m_fpBuffer, nLen ) );
-		TRACE1( "seed = %x\n", dcc.GetWord( nLen ) );
-	}
-}
-
-// calculate CRC (16 bits) for buffered data, and set codeword trailing the data.
-// this "Checksum Algorithm Reference" is adapted from MSDN.
-UINT CFileInfo::Get_CRC_CheckSum( PVOID pBuffer, ULONG ulSize )
-{
-	static WORD wCRC16a[16] = {
-		0000000, 0140301, 0140601, 0000500,
-		0141401, 0001700, 0001200, 0141101,
-		0143001, 0003300, 0003600, 0143501,
-		0002400, 0142701, 0142201, 0002100,
-	};
-	static WORD wCRC16b[16] = {
-		0000000, 0146001, 0154001, 0012000,
-		0170001, 0036000, 0024000, 0162001,
-		0120001, 0066000, 0074000, 0132001,
-		0050000, 0116001, 0104001, 0043000,
-	};
-
-	UINT nSeed = 0;				// We reset 0 to seed each call to CRC. 
-
-	for( PBYTE pb = (PBYTE) pBuffer; ulSize; ulSize --, pb ++ )
-	{
-		BYTE bTmp = (BYTE)(((WORD)*pb)^((WORD)nSeed));	// Xor CRC with new char
-		nSeed = ((nSeed)>>8) ^ wCRC16a[bTmp&0x0F] ^ wCRC16b[bTmp>>4];
-	}
-	return nSeed;
 }
 
 void CFileInfo::Serialize( CBArchive& bar )

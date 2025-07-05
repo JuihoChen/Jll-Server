@@ -51,6 +51,7 @@ void CJllServerView::DoDataExchange(CDataExchange* pDX)
 {
 	CFormView::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CJllServerView)
+	DDX_Control(pDX, IDC_BUTTON_FOR_DIR, m_cButtonForDir);
 	DDX_Text(pDX, IDC_EDIT_FOR_DIR, m_sStartingFolder);
 	DDV_MaxChars(pDX, m_sStartingFolder, 256);
 	//}}AFX_DATA_MAP
@@ -151,10 +152,7 @@ void CJllServerView::OnDraw(CDC* pDC)
 	// TODO: add draw code for native data here
 ///	_OutputDebugString( "View::OnDraw called.\n" );
 
-	///CRect rect;
-	///GetClientRect( &rect );
-
-    // this line below makes abnormal scrolling not to display some text.
+	// this line below makes abnormal scrolling not to display some text.
 	///v0.16//if( pDC->RectVisible( &rect ) )
 	{
 		CStringList& rSlm = pDoc->m_slMessages;
@@ -169,7 +167,7 @@ void CJllServerView::OnDraw(CDC* pDC)
 			// Iterate over whole list
 			while( pos != NULL )
 			{
-				pDC->TextOut( /*rect.left +*/ 15, cY, rSlm.GetNext( pos ) );
+				pDC->TextOut( 15, cY, rSlm.GetNext( pos ) );
 				cY += m_nLineHeight;
 			}
 		}
@@ -183,17 +181,6 @@ void CJllServerView::InvalidateForNewLine()
 	CRect rect;
 	GetClientRect( &rect );
 
-#if 0  // method below won't erase background covered by a popup dialog!
-	Invalidate();
-
-	int nTop = m_nTopForText + nLines * m_nLineHeight;
-
-	if( nTop < rect.bottom )
-	{
-		rect.SetRect( rect.left, nTop, rect.right, rect.bottom );
-		ValidateRect( &rect );
-	}
-#else
 	rect.SetRect(
 		rect.left,
 		0, //m_nTopForText,
@@ -205,7 +192,6 @@ void CJllServerView::InvalidateForNewLine()
 
 	// UpdateWindow is needed for the text to be put onto screen.
 	UpdateWindow();
-#endif
 }
 
 void CJllServerView::OnInitialUpdate() 
@@ -230,7 +216,7 @@ void CJllServerView::OnInitialUpdate()
 	////SetScaleToFitSize( GetTotalSize() );
 
 	CRect edtrect;
-	GetDlgItem( IDC_BUTTON_FOR_DIR )->GetClientRect( &edtrect );
+	m_cButtonForDir.GetClientRect( &edtrect );
 
 	TEXTMETRIC tm;
 	CPaintDC dc( this );

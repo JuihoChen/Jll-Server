@@ -16,7 +16,12 @@
 #define UWM_SERVER_END	(WM_APP+12)		// Message to indicate end of server thread
 #define UWM_ADD_STRING	(WM_APP+13)		// Message to add string to CJllServerDoc
 
+#define UWM_ARE_YOU_ME_MSG	_T("UWM_ARE_YOU_ME-{5DC84998-8E67-4369-B279-F77AB0B099B2}")
+
+const UINT UWM_ARE_YOU_ME = ::RegisterWindowMessage( UWM_ARE_YOU_ME_MSG );
+
 class CDCServer;
+class CJllServerView;
 
 class CMainFrame : public CFrameWnd
 {
@@ -24,6 +29,7 @@ class CMainFrame : public CFrameWnd
 
 protected: // create from serialization only
 	CMainFrame();
+	CJllServerView* GetActiveView() const;
 
 // Attributes
 public:
@@ -44,6 +50,7 @@ public:
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 	virtual BOOL DestroyWindow();
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
+	protected:
 	//}}AFX_VIRTUAL
 
 // Implementation
@@ -51,7 +58,7 @@ public:
 	void FormatOutput( LPCTSTR lpszFormat, ... );
 	UINT OnStartTimer(UINT nIDEvent);
 	void OnStopTimer(UINT nIDEvent);
-	void CheckReTimerToDetectGuest(); 
+	void CheckReTimerToDetectGuest();
 	virtual ~CMainFrame();
 #ifdef _DEBUG
 	virtual void AssertValid() const;
@@ -72,6 +79,7 @@ protected:
 	afx_msg void OnTimer(UINT nIDEvent);
 	afx_msg void OnClose();
 	//}}AFX_MSG
+	afx_msg LRESULT OnAreYouMe(WPARAM, LPARAM);
 	DECLARE_MESSAGE_MAP()
 };
 
@@ -80,6 +88,12 @@ inline CMainFrame* GetMyMainFrame()
 	CMainFrame* pFrame = (CMainFrame*)(GetMyApp()->m_pMainWnd);
 	ASSERT_KINDOF( CMainFrame, pFrame );
 	return (CMainFrame*)pFrame;
+}
+
+inline CJllServerView* CMainFrame::GetActiveView() const
+{
+	ASSERT_KINDOF( CJllServerView, m_pViewActive );
+	return (CJllServerView*)m_pViewActive;
 }
 
 /////////////////////////////////////////////////////////////////////////////

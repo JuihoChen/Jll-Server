@@ -3,8 +3,9 @@
 
 #include "stdafx.h"
 #include "Jll Server.h"
-#include "MainFrm.h"
 #include "Jll ServerDoc.h"
+#include "Jll ServerView.h"
+#include "MainFrm.h"
 #include "direct.h"
 #include <conio.h>
 
@@ -27,6 +28,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_WM_TIMER()
 	ON_WM_CLOSE()
 	//}}AFX_MSG_MAP
+	ON_REGISTERED_MESSAGE(UWM_ARE_YOU_ME, OnAreYouMe)
 END_MESSAGE_MAP()
 
 static UINT indicators[] =
@@ -116,7 +118,7 @@ BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 		return FALSE;
 	// TODO: Modify the Window class or styles here by modifying
 	//  the CREATESTRUCT cs
-	///cs.style |= WS_VSCROLL;
+	///cs.style &= ~FWS_ADDTOTITLE;
 
 	return TRUE;
 }
@@ -171,7 +173,7 @@ void CMainFrame::OnTimer(UINT nIDEvent)
 			OnStopTimer( nTimerIdDetectGuest );
 	 		FormatOutput( "the Guest is detected... %s",
 				CTime::GetCurrentTime().Format( "at %H:%M:%S on %A, %B %d, %Y" ) );
-			GetActiveView()->GetDlgItem( IDC_BUTTON_FOR_DIR )->EnableWindow( FALSE );
+			GetActiveView()->m_cButtonForDir.EnableWindow( FALSE );
 			m_pTheServer->Begin( this );
 		}
 		break;
@@ -244,6 +246,7 @@ void CMainFrame::CheckReTimerToDetectGuest()
 	if( !m_pTheServer->IsRunning() && m_nTimerDetectGuest == 0 )
 	{
 		// Reenable timer to detect the guest after this Dialog.
+		GetActiveView()->m_cButtonForDir.EnableWindow( TRUE );
 		OnStartTimer( nTimerIdDetectGuest );	
 	}
 }
@@ -267,7 +270,7 @@ BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
 	case UWM_SERVER_END:
 	 	FormatOutput( "the Guest is disconnected... %s",
 			CTime::GetCurrentTime().Format( "at %H:%M:%S" ) );
-		GetActiveView()->GetDlgItem( IDC_BUTTON_FOR_DIR )->EnableWindow( TRUE );
+		GetActiveView()->m_cButtonForDir.EnableWindow( TRUE );
 		OnStartTimer( nTimerIdDetectGuest );
 		return TRUE;
 
@@ -295,6 +298,13 @@ BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
 	return CFrameWnd::PreTranslateMessage(pMsg);
 }
 
+// Registered message (messages >= 0xC000) must be handled in a MESSAGE_MAP entry.
+// Routine PreTranslateMessage cannot intercept this cateory of messages.
+LRESULT CMainFrame::OnAreYouMe( WPARAM, LPARAM )
+{
+	return UWM_ARE_YOU_ME;
+}
+
 void CMainFrame::OnClose() 
 {
 	// TODO: Add your message handler code here and/or call default
@@ -318,3 +328,4 @@ void CMainFrame::OnClose()
 
 	CFrameWnd::OnClose();
 }
+

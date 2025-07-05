@@ -1,7 +1,6 @@
 // Jll Server.cpp : Defines the class behaviors for the application.
 //
 //     Copyright (c) 2004, Compal Electronics, Inc.  All rights reserved.
-//
 //     Ver.    Date             Logs
 //     -----   ------------   -------------
 //     v0.00   OCT 01, 2004   to create.
@@ -17,13 +16,15 @@
 //                            fix for some text not displayed when scrolling bar acts.
 //                            add CRC feature to "Send Data" command.
 //             NOV 11, 2004   put the version string in about box onto the frame title.
+//     v0.17   NOV 16, 2004   avoid multiple instances (codes from Joseph M. Newcomer).
+//             NOV 17, 2004   create an event notifying worker thread been killed.
+//             NOV 22, 2004   add ability for timeout check in block transfer.
 
 #include "stdafx.h"
 #include "Jll Server.h"
-
-#include "MainFrm.h"
 #include "Jll ServerDoc.h"
 #include "Jll ServerView.h"
+#include "MainFrm.h"
 #include "parallel.h"
 #include "direct.h"
 
@@ -49,6 +50,11 @@ BEGIN_MESSAGE_MAP(CJllServerApp, CWinApp)
 END_MESSAGE_MAP()
 
 /////////////////////////////////////////////////////////////////////////////
+// The one and only CJllServerApp object
+
+CJllServerApp theApp;
+
+/////////////////////////////////////////////////////////////////////////////
 // CJllServerApp construction
 
 CJllServerApp::CJllServerApp()
@@ -59,9 +65,62 @@ CJllServerApp::CJllServerApp()
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// The one and only CJllServerApp object
+// Some coded copied from articles of The Code Project
+BOOL CALLBACK CJllServerApp::Searcher( HWND hWnd, LPARAM lParam )
+{
+	DWORD result;
+	LRESULT ok = ::SendMessageTimeout(
+		hWnd,
+		UWM_ARE_YOU_ME,
+		0, 0,
+		SMTO_BLOCK /*| SMTO_ABORTIFHUNG*/ | SMTO_NOTIMEOUTIFNOTHUNG,
+		200,
+		&result );
 
-CJllServerApp theApp;
+	if( ok == 0 )
+		return TRUE;	// ignore this and continue
+	if( result == UWM_ARE_YOU_ME )
+	{ /* found it */
+		*(HWND*)lParam = hWnd;
+		return FALSE;	// stop search
+	} /* found it */
+	return TRUE;		// continue search
+}
+
+BOOL CJllServerApp::AvoidMultipleInstances() const
+{
+	HANDLE hMutexOneInstance = ::CreateMutex( NULL, FALSE, UWM_ARE_YOU_ME_MSG );
+	BOOL bAlreadyRunning = (GetLastError() == ERROR_ALREADY_EXISTS ||
+							GetLastError() == ERROR_ACCESS_DENIED);
+
+	// The call fails with ERROR_ACCESS_DENIED if the Mutex was
+	// created in a different users session because of passing
+	// NULL for the SECURITY_ATTRIBUTES on Mutex creation);
+
+	if( bAlreadyRunning )
+	{ /* kill this */
+		HWND hOther = NULL;
+		EnumWindows( Searcher, (LPARAM) &hOther );
+
+		if( hOther != NULL )
+		{ /* pop up */
+			::SetForegroundWindow( hOther );
+
+			if( IsIconic( hOther ) )
+			{ /* restore */
+				::ShowWindow( hOther, SW_RESTORE );
+			} /* restore */
+		} /* pop up */
+
+		// Display something that tells the user
+		// the app is already running.
+		///AfxMessageBox( "Application is already running." );
+
+		return FALSE;
+	} /* kill this */
+
+	return TRUE;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // CJllServerApp initialization
@@ -82,7 +141,7 @@ BOOL CJllServerApp::InitInstance()
 	// Check if the parallel port setup okay?
 	m_lptNibble.Setup();
 
-	if( m_lptNibble.PortIsPresent() == FALSE )
+	if( !m_lptNibble.PortIsPresent() )
 	{
 		MessageBox( NULL,
 			"This application needs a printer port on the system.",
@@ -93,33 +152,8 @@ BOOL CJllServerApp::InitInstance()
 	}
 
 	// Only one instance is allowed to be running.
-	HANDLE hMapping = CreateFileMapping(
-		(HANDLE) 0xffffffff,
-		NULL,
-		PAGE_READONLY,
-		0,
-		32,
-		"MyTestMap"
-	);
-
-	if( hMapping )
-	{
-		if( GetLastError() == ERROR_ALREADY_EXISTS )
-		{
-			// Display something that tells the user
-			// the app is already running.
-			AfxMessageBox( "Application is already running." );
-			///MessageBox( NULL, "Application is already running.", m_pszAppName, MB_OK );
-			///SetActiveWindow( FindWindow( _T("Jll Server"), NULL ) );
-			return FALSE;
-		}
-	}
-	else
-	{
-		// Some other error; handle error.
-		AfxMessageBox( "Error creating mapping" );
+	if( !AvoidMultipleInstances() )
 		return FALSE;
-	}
 
 	// Try to open PortTalk driver to touch LPT ports...
 	switch( m_drvPortTalk.OpenPortTalk() )

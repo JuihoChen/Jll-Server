@@ -34,8 +34,11 @@ WORD CNibbleModeProto::ReadByteFromPortInByte()
 	register WORD rwBase = m_cParaport.GetBaseAddr();
 
 	// When S6=0, set D3=0.
+	gblQPCTimer.ResetCounter();
 	while( (_inp( rwBase + 1 ) & iBUSY_VAL) == 0x0 )
-		;
+	{
+		gblQPCTimer.CounterExceedToCheck();
+	}
 	/// *!*
 	/// *!* Cannot assure if status/control could be read in a word?
 	/// *!*
@@ -45,8 +48,11 @@ WORD CNibbleModeProto::ReadByteFromPortInByte()
 
 	// When the peripheral responds by setting S6=1, set D3=1.
 	// LowNibble holds 4 bits of data.
+	gblQPCTimer.ResetCounter();
 	while( (_inp( rwBase + 1 ) & iBUSY_VAL) != 0x0 )
-		;
+	{
+		gblQPCTimer.CounterExceedToCheck();
+	}
 	WORD wHData = _inpw( rwBase + 1 );
 	_outp( rwBase, oSTROBE_VAL );
 
@@ -69,9 +75,10 @@ WORD CNibbleModeProto::ReadByteFromPortInByte()
 
 #else //RRR
 	// When S6=0, set D3=0.
+	gblQPCTimer.ResetCounter();
 	while( (m_cParaport.ReadStatusPort() & iBUSY_VAL) != 0x0 )
 	{
-//		tmrWaitS6.CheckTimeout();		// use TRY/CATCH mechanism
+		gblQPCTimer.CounterExceedToCheck();
 	}
 	BYTE bHighNibble = m_cParaport.rawControlPortRead();
 	BYTE bLowNibble = m_cParaport.ReadStatusPort();
@@ -79,9 +86,10 @@ WORD CNibbleModeProto::ReadByteFromPortInByte()
 
 	// When the peripheral responds by setting S6=1, set D3=1.
 	// LowNibble holds 4 bits of data.
+	gblQPCTimer.ResetCounter();
 	while( (m_cParaport.ReadStatusPort() & iBUSY_VAL) == 0x0 )
 	{
-//		tmrWaitS6.CheckTimeout();		// use TRY/CATCH mechanism
+		gblQPCTimer.CounterExceedToCheck();
 	}
 	bHighNibble = m_cParaport.rawControlPortRead();
 	bLowNibble = m_cParaport.ReadStatusPort();
@@ -103,15 +111,21 @@ void CNibbleModeProto::WriteByteToPortInByte( WORD wWordToWrite ) const
 	register WORD rwBase = m_cParaport.GetBaseAddr();
 
 	// When S6=1 (not busy), write the low nibble and set D3=0.
+	gblQPCTimer.ResetCounter();
 	while( (_inp( rwBase + 1 ) & iBUSY_VAL) != 0x0 )
-		;
+	{
+		gblQPCTimer.CounterExceedToCheck();
+	}
 	BYTE bByteToWrite = (BYTE) wWordToWrite;
 	_outp( rwBase + 2, bByteToWrite >> 4 );		// High Nibble
 	_outp( rwBase, bByteToWrite & 0xf );		// Low Nibble
 
 	// When the peripheral responds by setting S6=0, set D3=1.
+	gblQPCTimer.ResetCounter();
 	while( (_inp( rwBase + 1 ) & iBUSY_VAL) == 0x0 )
-		;
+	{
+		gblQPCTimer.CounterExceedToCheck();
+	}
 	bByteToWrite = (BYTE) (wWordToWrite >> 8);
 	_outp( rwBase + 2, bByteToWrite >> 4 );		// High Nibble
 	_outp( rwBase, (bByteToWrite & 0xf) | oSTROBE_VAL );
@@ -125,9 +139,10 @@ void CNibbleModeProto::WriteByteToPortInByte( WORD wWordToWrite ) const
 
 #else //WWW
 	// When S6=1 (not busy), write the low nibble and set D3=0.
+	gblQPCTimer.ResetCounter();
 	while( (m_cParaport.ReadStatusPort() & iBUSY_VAL) == 0x0 )
 	{
-//		tmrWaitS6.CheckTimeout();		// use TRY/CATCH mechanism
+		gblQPCTimer.CounterExceedToCheck();
 	}
 	// **!**
 	// **!** Strobe (status) has to be reset AFTER the Control port set.
@@ -137,9 +152,10 @@ void CNibbleModeProto::WriteByteToPortInByte( WORD wWordToWrite ) const
 	m_cParaport.WriteDataPort( bByteToWrite & 0xf );		// Low Nibble
 
 	// When the peripheral responds by setting S6=0, set D3=1.
+	gblQPCTimer.ResetCounter();
 	while( (m_cParaport.ReadStatusPort() & iBUSY_VAL) != 0x0 )
 	{
-//		tmrWaitS6.CheckTimeout();		// use TRY/CATCH mechanism
+		gblQPCTimer.CounterExceedToCheck();
 	}
 	bByteToWrite = (BYTE) (wWordToWrite >> 8);
 	m_cParaport.rawControlPortWrite( bByteToWrite >> 4 );	// High Nibble
@@ -150,9 +166,7 @@ void CNibbleModeProto::WriteByteToPortInByte( WORD wWordToWrite ) const
 	//   In transients between CDB & Status nibble in command phase,
 	//   a polling for not being busy is necessary as below.
 	while( ((CNibbleModeProto*)this)->CheckForPolling() && (m_cParaport.ReadStatusPort() & iBUSY_VAL) == 0x0 )
-	{
-//		tmrWaitS6.CheckTimeout();		// use TRY/CATCH mechanism
-	}
+		;
 #endif
 #undef WWW
 }

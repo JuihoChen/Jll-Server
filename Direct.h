@@ -69,6 +69,7 @@ protected:
 	void SetAt( UINT nIndex, WORD wElement );
 	void SetString( UINT nIndex, CString& rString );
 	void DeleteBase();
+	UINT Get_CRC_CheckSum( ULONG ulSize ) const;
 protected:
 	CNibbleModeProto& m_rNibbleModeDev;
 	ptrSendFunc m_pfnSendFromBuffer;
@@ -93,15 +94,15 @@ private:
 	static UINT ThreadProc( LPVOID pObj );
 	CWinThread* volatile m_pThread;		// running thread, if any
 protected:
-	volatile BOOL m_bRunning;	// whether to abort: DoWork must check this
-	HWND m_hWndOwner;			// HWND, *not* CWnd* of owner window
-	UINT m_uErr;				// thread error code
+	volatile BOOL m_bRunning;			// whether to abort: DoWork must check this
+	HANDLE m_hEventServerThreadKilled;	// event for thread been killed
+	HWND m_hWndOwner;					// HWND, *not* CWnd* of owner window
 public:
 	CDCServer( CNibbleModeProto& lpt );
 	~CDCServer();
 	void ParseWorkDir( CString sFolderName );
-	virtual BOOL Begin( CWnd* pWndOwner = NULL, UINT ucbMsg = 0 );
-	virtual void Kill();
+	virtual BOOL Begin( CWnd* pWndOwner = NULL );
+	virtual void KillThread();
 	BOOL IsRunning() const;
 protected:
 	virtual UINT DoWork();

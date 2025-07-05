@@ -4,8 +4,10 @@
 
 #include "stdafx.h"
 #include "Jll Server.h"
-#include "Except.h"
+#include "Jll ServerDoc.h"
+#include "Jll ServerView.h"
 #include "MainFrm.h"
+#include "Except.h"
 
 #ifdef _DEBUG
 #undef THIS_FILE
@@ -124,6 +126,7 @@ void CTimer::AssertValid() const
 
 QPCTimer gblQPCTimer;					// the global QPC Timer object
 
+////int QPCTimer::m_nCountBeforeCheck;
 __int64 QPCTimer::m_i64Multiplier = 1;
 const __int64 QPCTimer::m_i64CountForOneSec = 0x369e99;
 
@@ -164,6 +167,15 @@ void QPCTimer::Delay( __int64 count )
         toQPC = GetQPCTime();
     }
     while( count > toQPC - fromQPC );
+}
+
+void QPCTimer::CheckTimeout() const
+{
+	if( (GetQPCTime() - m_i64Start) > m_i64Interval )
+	{
+		TRACE( "Error: Timeout in block transfer.\n" );
+		THROW( new CTimerException( ":( Timeout occurred in block transfer.\r\n" ) );
+	}
 }
 
 /////////////////////////////////////////////////////////////////////////////

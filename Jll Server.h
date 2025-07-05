@@ -25,6 +25,8 @@ class CJllServerApp : public CWinApp
 {
 	DECLARE_DYNCREATE(CJllServerApp)
 public:
+	static BOOL CALLBACK Searcher(HWND hWnd, LPARAM lParam);
+	BOOL AvoidMultipleInstances() const;
 	void StoreProfileStrings();
 	void LoadProfileStrings();
 	CJllServerApp();

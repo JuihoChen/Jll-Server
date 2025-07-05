@@ -4,6 +4,8 @@
 
 #include "stdafx.h"
 #include "Jll Server.h"
+#include "Jll ServerDoc.h"
+#include "Jll ServerView.h"
 #include "MainFrm.h"
 #include "except.h"
 #include "Direct.h"
@@ -52,6 +54,7 @@ void CDirectCable::SendFromBuffer( UINT nLen ) const
 {
 	ASSERT( nLen > 0 && nLen <= BF_MAXLEN );
 
+	gblQPCTimer.SetTimer( 8 );		// v0.17 sets 8-sec timeout.
 	m_rNibbleModeDev.SetPollCounter( 0 );
 	for( register UINT n = 0; -- nLen; n ++ )
 	{
@@ -72,6 +75,8 @@ void CDirectCable::ReceiveIntoBuffer( register UINT nIndex, UINT nLen )
 {
 	ASSERT( nIndex >= 0 && nLen > 0 );
 	ASSERT( nIndex <= BF_MAXLEN && (nIndex + nLen - 1) <= BF_MAXLEN );
+
+	gblQPCTimer.SetTimer( 6 );		// v0.17 sets 6-sec timeout.
 	while( nLen -- )
 	{
 /** these 2 lines below is replaced with for speeding up. ***
@@ -87,6 +92,7 @@ void CDirectCable::SendFromBufferInByte( UINT nLen ) const
 {
 	ASSERT( nLen > 0 && nLen <= BF_MAXLEN );
 
+	gblQPCTimer.SetTimer( 8 );		// v0.17 sets 8-sec timeout.
 	m_rNibbleModeDev.SetPollCounter( 0 );
 	for( register UINT n = 0; nLen > 2; n += 2, nLen -= 2 )
 	{
@@ -103,6 +109,7 @@ void CDirectCable::ReceiveIntoBufferInByte( register UINT nIndex, UINT nLen )
 	ASSERT( nIndex <= BF_MAXLEN && (nIndex + nLen - 1) <= BF_MAXLEN );
 
 	m_rNibbleModeDev.MakeControl4Input();
+	gblQPCTimer.SetTimer( 5 );		// v0.17 sets 5-sec timeout.
 	while( 1 )
 	{
 		*(WORD FAR*)(m_fpBuffer + nIndex) = m_rNibbleModeDev.ReadByteFromPortInByte();
@@ -145,6 +152,33 @@ void CDirectCable::DeleteBase()
 	m_aFiInfoBase.RemoveAll();
 }
 
+// calculate CRC (16 bits) for buffered data, and set codeword trailing the data.
+// this "Checksum Algorithm Reference" is adapted from MSDN.
+UINT CDirectCable::Get_CRC_CheckSum( ULONG ulSize ) const
+{
+	static WORD wCRC16a[16] = {
+		0000000, 0140301, 0140601, 0000500,
+		0141401, 0001700, 0001200, 0141101,
+		0143001, 0003300, 0003600, 0143501,
+		0002400, 0142701, 0142201, 0002100,
+	};
+	static WORD wCRC16b[16] = {
+		0000000, 0146001, 0154001, 0012000,
+		0170001, 0036000, 0024000, 0162001,
+		0120001, 0066000, 0074000, 0132001,
+		0050000, 0116001, 0104001, 0043000,
+	};
+
+	UINT nSeed = 0;				// We reset 0 to seed each call to CRC. 
+
+	for( PBYTE pb = m_fpBuffer; ulSize; ulSize --, pb ++ )
+	{
+		BYTE bTmp = (BYTE)(((WORD)*pb)^((WORD)nSeed));	// Xor CRC with new char
+		nSeed = ((nSeed)>>8) ^ wCRC16a[bTmp&0x0F] ^ wCRC16b[bTmp>>4];
+	}
+	return nSeed;
+}
+
 #ifdef _DEBUG
 void CDirectCable::AssertValid() const
 {
@@ -161,22 +195,32 @@ CDCServer::CDCServer( CNibbleModeProto& lpt ) : CDirectCable( lpt )
 {
 	InvalidateOpcode();				// Invalidate Opcode
 	m_pThread = NULL;				// Invalidate thread pointer
+									// auto reset, initially reset
+	m_hEventServerThreadKilled = CreateEvent( NULL, FALSE, FALSE, NULL );
 }
 
 CDCServer::~CDCServer()
 {
 	_OutputDebugString( "CDCServer::Destructor called.\n" );
 
-	Kill();							// Kill the other thread anyway.
-    for( int i = 0; i < 10 && m_pThread; i ++ )
+	DWORD dwExitCode;
+	// If the specified thread has not terminated, the termination status returned
+	// by GetExitCodeThread is STILL_ACTIVE.
+	if( m_pThread && GetExitCodeThread( m_pThread->m_hThread, &dwExitCode ) &&
+		dwExitCode == STILL_ACTIVE )
 	{
-		::Sleep( 20 );				// Give the other thread chances to quit.
+
+		KillThread();				// Kill the worker thread and await 500 ms.
+		WaitForSingleObject( m_hEventServerThreadKilled, 500 );
+
+		if( m_pThread )
+		{
+			TRACE0( "CDCServer: *** Warning: deleting active thread! ***\n" );
+			delete m_pThread;		// delete CWinThread object
+		}
 	}
-	if( m_pThread )
-	{
-		TRACE0( "CDCServer: *** Warning: deleting active thread! ***\n" );
-		delete m_pThread;
-	}
+
+	CloseHandle( m_hEventServerThreadKilled );
 }
 
 void CDCServer::ParseWorkDir( CString sFolderName )
@@ -336,17 +380,14 @@ void CDCServer::SendData()
 	nStickNo = (nStickNo + 1) & 0x3;
 	****************************************************************/
 
-	if( bAttribute & b7_NCRC )				// CRC codeword not to be appended?
-	{
-		m_fiInfo.m_bUseCRC = FALSE;
-		m_fiInfo.ReadFile( dwStartAddress, wTransferLen, *this );
+	m_fiInfo.ReadFile( dwStartAddress, wTransferLen, *this );
 
+	if( bAttribute & b7_NCRC )				// CRC codeword not to be appended?
 		(this->*m_pfnSendFromBuffer)( wTransferLen );
-	}
 	else									// Calculate CRC & append it!
 	{
-		m_fiInfo.m_bUseCRC = TRUE;
-		m_fiInfo.ReadFile( dwStartAddress, wTransferLen, *this );
+		SetAt( wTransferLen, (WORD) Get_CRC_CheckSum( wTransferLen ) );
+		TRACE1( "seed = %x\n", CDirectCable::GetWord( wTransferLen ) );
 
 		(this->*m_pfnSendFromBuffer)( wTransferLen + 2 );
 	}
@@ -663,57 +704,102 @@ void CDCServer::FormatOutput( LPCTSTR lpszFormat, ... )
 
 UINT CDCServer::DoWork()
 {
-	InvalidateOpcode();				// Invalidate Opcode
+	InvalidateOpcode();					// Invalidate Opcode
 
-	do
+	TRY
 	{
-		if( m_rNibbleModeDev.WatchForIncoming() == FALSE )
+		do
 		{
-			// A value of zero causes the thread to relinquish the remainder of
-			// its time slice to any other thread of equal priority that is ready
-			// to run. If there are no other threads of equal priority ready to
-			// run, the function returns immediately.
-			::Sleep( 0 );
-			continue;
-		}
-		// Set this thread's priority as high as reasonably possible to
-		// prevent timeslice interrupts.
-		::SetThreadPriority( m_pThread, THREAD_PRIORITY_TIME_CRITICAL );
+			if( m_rNibbleModeDev.WatchForIncoming() == FALSE )
+			{
+				// A value of zero causes the thread to relinquish the remainder
+				// of its time slice to any other thread of equal priority that
+				// is ready to run. If there are no other threads of equal
+				// priority ready to run, the function returns immediately.
+				::Sleep( 0 );
+				continue;
+			}
+			// Set this thread's priority as high as reasonably possible to
+			// prevent timeslice interrupts.
+			::SetThreadPriority( ::GetCurrentThread(), THREAD_PRIORITY_HIGHEST );
+			/// m_pThread->SetThreadPriority() claims assertion!
+			////*v0.17* m_pThread->SetThreadPriority( THREAD_PRIORITY_TIME_CRITICAL );
 
-		ReceiveCommand();
+			ReceiveCommand();
 
 #ifdef _DEBUG
-		Dump( afxDump );
+			Dump( afxDump );
 #endif
-		switch( GetOpcode() )
-		{
-		case EndDCC:
-			RetCheckStatus( OkStatus );
-			break;
-		case RequestFileInfo:
-			SendFileInfo();
-			break;
-		case TransferData:
-			SendData();
-			break;
-		case RequestChgDir:
-			ChangeDir();
-			break;
-		case ReadTOC:
-			SendTOC();
-			break;
-		case ChangeBandwidth:
-			SwitchBusSpeed();
-			break;
-		default:
-			RetCheckStatus( NgIllegalCommand );
-			break;
-		}
+			switch( GetOpcode() )
+			{
+			case EndDCC:
+				RetCheckStatus( OkStatus );
+				break;
+			case RequestFileInfo:
+				SendFileInfo();
+				break;
+			case TransferData:
+				SendData();
+				break;
+			case RequestChgDir:
+				ChangeDir();
+				break;
+			case ReadTOC:
+				SendTOC();
+				break;
+			case ChangeBandwidth:
+				SwitchBusSpeed();
+				break;
+			default:
+				RetCheckStatus( NgIllegalCommand );
+				break;
+			}
 
-		// Reset this thread's priority back to normal.
-		::SetThreadPriority( m_pThread, THREAD_PRIORITY_NORMAL );
+			// Reset this thread's priority back to normal.
+			::SetThreadPriority( ::GetCurrentThread(), THREAD_PRIORITY_NORMAL );
+		}
+		while( m_bRunning && (GetOpcode() != EndDCC) );
 	}
-	while( m_bRunning && (GetOpcode() != EndDCC) );
+	CATCH( CExcptClass, theException )
+	{
+		theException->Handler();
+
+		::PostMessage( m_hWndOwner, UWM_EXCEPT_BOX, 0, 0L );
+	}
+	AND_CATCH( CFileException, theException )
+	{
+		FormatOutput( "Error: caught a file exception <%d>.", theException->m_cause );
+	}
+	AND_CATCH( CException, theException )
+	{
+		CString sTemp;
+		sTemp.Format( "Unexpected exception:> %s\r\n", theException->GetRuntimeClass()->m_lpszClassName );
+		GetMyMainFrame()->m_ExceptDlg.AddStringToEdit( sTemp );
+
+		::PostMessage( m_hWndOwner, UWM_EXCEPT_BOX, 0, 0L );
+	}
+	END_CATCH
+
+	TRY
+	{
+		// the transferred File might be still opened due to some failure...
+		if( m_fiInfo.m_fiArchive.m_hFile != CFile::hFileNull )
+		{
+			m_fiInfo.m_fiArchive.Close();
+			m_fiInfo.m_bFileInUse = FALSE;
+		}
+	}
+	CATCH_ALL( e )
+	{
+		// just close that file anyway (but CFile::Close would throw).
+	}
+	END_CATCH_ALL
+
+	m_pThread = NULL;					// done: clear
+	m_bRunning = FALSE;
+
+	::PostMessage( m_hWndOwner, UWM_SERVER_END, 0, 0L );
+	::SetEvent( m_hEventServerThreadKilled );
 
 	return 0;
 }
@@ -727,35 +813,7 @@ UINT CDCServer::ThreadProc( LPVOID pObj )
 {
 	CDCServer* pJob = (CDCServer*)pObj;
 	ASSERT_KINDOF( CDCServer, pJob );
-	TRY
-	{
-		pJob->m_uErr = pJob->DoWork();		// call virt fn to do the work
-	}
-	CATCH( CExcptClass, theException )
-	{
-		theException->Handler();
-
-		::PostMessage( pJob->m_hWndOwner, UWM_EXCEPT_BOX, 0, 0L );
-	}
-	AND_CATCH( CFileException, theException )
-	{
-		pJob->FormatOutput( "Error: caught a file exception <%d>.", theException->m_cause );
-	}
-	AND_CATCH( CException, theException )
-	{
-		CString sTemp;
-		sTemp.Format( "Unexpected exception:> %s\r\n", theException->GetRuntimeClass()->m_lpszClassName );
-		GetMyMainFrame()->m_ExceptDlg.AddStringToEdit( sTemp );
-
-		::PostMessage( pJob->m_hWndOwner, UWM_EXCEPT_BOX, 0, 0L );
-	}
-	END_CATCH
-
-	pJob->m_pThread = NULL;					// done: clear
-	pJob->m_bRunning = FALSE;
-
-	::PostMessage( pJob->m_hWndOwner, UWM_SERVER_END, 0, 0L );
-	return pJob->m_uErr;					// ..and return error code to Windows
+	return pJob->DoWork();				// ..and return error code to Windows
 }
 
 //////////////////
@@ -763,22 +821,22 @@ UINT CDCServer::ThreadProc( LPVOID pObj )
 // message ID to use for OnProgress notifications, if any. You could enhance
 // this to expose pritority and other AfxBeginThread args.
 //
-BOOL CDCServer::Begin( CWnd* pWndOwner /* = NULL */, UINT ucbMsg /* = 0 */)
+BOOL CDCServer::Begin( CWnd* pWndOwner /* = NULL */)
 {
 	m_hWndOwner = pWndOwner->GetSafeHwnd();	// NULL if used with a null CWnd pointer
-	m_uErr = 0;
 	m_bRunning = TRUE;
 	m_pThread = AfxBeginThread( ThreadProc, this );
-	ASSERT( m_pThread );
+	ASSERT_KINDOF( CWinThread, m_pThread );
+	ResetEvent( m_hEventServerThreadKilled );
 	return m_pThread != NULL;
 }
 
 //////////////////
 // Abort the thread. All this does is set m_bAbort = TRUE.
-// It's up to you to check m_bAbort periodically in your DoWork function.
+// It's up to you to check m_bRunning periodically in your DoWork function.
 // You can override to use CEvent if you need to.
 //
-void CDCServer::Kill()
+void CDCServer::KillThread()
 {
 	m_bRunning = FALSE;
 }
