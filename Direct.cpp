@@ -221,7 +221,7 @@ void CDCServer::RetCheckStatus( EStatus nStatus )
 	ASSERT( m_tmrWaitS6.m_fEnabled == TRUE );	// the timer was turned on
 
 	//***JHC* Here has to be some delay for the opposite polling *JHC***
-	gblQPCTimer.Delay( 500 );					// (adequate) delay for next command.
+	gblQPCTimer.Delay( 600 );					// (adequate) delay for next command.
 
 	m_tmrWaitS6.SetTimer( 5000, "SC:> " );		// re-turn on timer for message
 	m_rNibbleModeDev.WriteNibbleToPort( nStatus, m_tmrWaitS6 );

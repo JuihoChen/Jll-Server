@@ -3,70 +3,31 @@
 <pre>
 <h1>Build Log</h1>
 <h3>
---------------------Configuration: Jll Server - Win32 Release--------------------
+--------------------Configuration: Jll Server - Win32 Debug--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "C:\DOCUME~1\JUIHO_~1.PCP\LOCALS~1\Temp\RSPF4.tmp" with contents
+Creating command line "rc.exe /l 0x404 /fo"Debug/Jll Server.res" /d "_DEBUG" "D:\Program Files\Microsoft Visual Studio\MyProjects\Jll Server\Jll Server.rc"" 
+Creating temporary file "D:\DOCUME~1\JUIHO~1.NBP\LOCALS~1\Temp\RSP43.tmp" with contents
 [
-/nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /FAs /Fa"Release/" /FR"Release/" /Fp"Release/Jll Server.pch" /Yu"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
-"C:\Program Files\Microsoft Visual Studio\MyProjects\Jll Server\_Except.cpp"
-"C:\Program Files\Microsoft Visual Studio\MyProjects\Jll Server\BArchive.cpp"
-"C:\Program Files\Microsoft Visual Studio\MyProjects\Jll Server\Direct.cpp"
-"C:\Program Files\Microsoft Visual Studio\MyProjects\Jll Server\Jll Server.cpp"
-"C:\Program Files\Microsoft Visual Studio\MyProjects\Jll Server\Jll ServerView.cpp"
-"C:\Program Files\Microsoft Visual Studio\MyProjects\Jll Server\MainFrm.cpp"
-"C:\Program Files\Microsoft Visual Studio\MyProjects\Jll Server\Paralle2.cpp"
-"C:\Program Files\Microsoft Visual Studio\MyProjects\Jll Server\Parallel.cpp"
+/nologo /subsystem:windows /incremental:yes /pdb:"Debug/Jll Server.pdb" /debug /machine:I386 /out:"Debug/Jll Server.exe" /pdbtype:sept 
+".\Debug\_Except.obj"
+".\Debug\BArchive.obj"
+".\Debug\Direct.obj"
+".\Debug\DIRPKR.OBJ"
+".\Debug\Jll Server.obj"
+".\Debug\Jll ServerDoc.obj"
+".\Debug\Jll ServerView.obj"
+".\Debug\MainFrm.obj"
+".\Debug\Paralle2.obj"
+".\Debug\Parallel.obj"
+".\Debug\PortTalk.obj"
+".\Debug\StdAfx.obj"
+".\Debug\Jll Server.res"
 ]
-Creating command line "cl.exe @C:\DOCUME~1\JUIHO_~1.PCP\LOCALS~1\Temp\RSPF4.tmp" 
-Creating temporary file "C:\DOCUME~1\JUIHO_~1.PCP\LOCALS~1\Temp\RSPF5.tmp" with contents
-[
-/nologo /subsystem:windows /incremental:no /pdb:"Release/Jll Server.pdb" /machine:I386 /out:"Release/Jll Server.exe" 
-".\Release\_Except.obj"
-".\Release\BArchive.obj"
-".\Release\Direct.obj"
-".\Release\DIRPKR.OBJ"
-".\Release\Jll Server.obj"
-".\Release\Jll ServerDoc.obj"
-".\Release\Jll ServerView.obj"
-".\Release\MainFrm.obj"
-".\Release\Paralle2.obj"
-".\Release\Parallel.obj"
-".\Release\PortTalk.obj"
-".\Release\StdAfx.obj"
-".\Release\Jll Server.res"
-]
-Creating command line "link.exe @C:\DOCUME~1\JUIHO_~1.PCP\LOCALS~1\Temp\RSPF5.tmp"
+Creating command line "link.exe @D:\DOCUME~1\JUIHO~1.NBP\LOCALS~1\Temp\RSP43.tmp"
 <h3>Output Window</h3>
-Compiling...
-_Except.cpp
-BArchive.cpp
-Direct.cpp
-Jll Server.cpp
-Jll ServerView.cpp
-MainFrm.cpp
-Paralle2.cpp
-Parallel.cpp
-Generating Code...
+Compiling resources...
 Linking...
-Creating temporary file "C:\DOCUME~1\JUIHO_~1.PCP\LOCALS~1\Temp\RSPF7.tmp" with contents
-[
-/nologo /o"Release/Jll Server.bsc" 
-".\Release\StdAfx.sbr"
-".\Release\_Except.sbr"
-".\Release\BArchive.sbr"
-".\Release\Direct.sbr"
-".\Release\DIRPKR.SBR"
-".\Release\Jll Server.sbr"
-".\Release\Jll ServerDoc.sbr"
-".\Release\Jll ServerView.sbr"
-".\Release\MainFrm.sbr"
-".\Release\Paralle2.sbr"
-".\Release\Parallel.sbr"
-".\Release\PortTalk.sbr"]
-Creating command line "bscmake.exe @C:\DOCUME~1\JUIHO_~1.PCP\LOCALS~1\Temp\RSPF7.tmp"
-Creating browse info file...
-<h3>Output Window</h3>
 
 
 

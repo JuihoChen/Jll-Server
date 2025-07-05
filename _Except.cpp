@@ -124,13 +124,26 @@ void CTimer::AssertValid() const
 
 QPCTimer gblQPCTimer;					// the global QPC Timer object
 
+__int64 QPCTimer::m_i64Multiplier = 1;
+const __int64 QPCTimer::m_i64CountForOneSec = 0x369e99;
+
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
 QPCTimer::QPCTimer()
 {
-	QueryPerformanceFrequency( (LARGE_INTEGER*) &m_i64Freq );
+	// check if high-resolution performance counter not supported.
+	if( QueryPerformanceFrequency( (LARGE_INTEGER*) &m_i64Freq ) )
+	{
+		m_i64Multiplier = m_i64Freq / m_i64CountForOneSec;
+		if( m_i64Multiplier == 0 ) m_i64Multiplier = 1;
+	}
+	else
+	{
+		m_i64Freq = 0;
+		m_i64Multiplier = 1;
+	}
 }
 
 __int64 QPCTimer::GetQPCTime()
@@ -142,6 +155,9 @@ __int64 QPCTimer::GetQPCTime()
 
 void QPCTimer::Delay( __int64 count )
 {
+	ASSERT( gblQPCTimer.m_i64Freq );
+
+	count *= m_i64Multiplier;
 	__int64 fromQPC = GetQPCTime(), toQPC;
     do
     {

@@ -103,6 +103,8 @@ public:
 	static void Delay( __int64 count );
 protected:
 	__int64 m_i64Freq;
+	static __int64 m_i64Multiplier;
+	static const __int64 m_i64CountForOneSec;
 };
 
 extern QPCTimer gblQPCTimer;			// the global QPC Timer object

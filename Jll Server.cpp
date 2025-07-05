@@ -9,6 +9,7 @@
 //                            the user to select a directory. (adapted from DIRPK)
 //     v0.11   OCT 22, 2004   create a worker thread (background) as the Server.
 //     v0.12   NOV 01, 2004   complete XP-DOS communication, and keep on debugging.
+//     v0.13   NOV 01, 2004   some fast-computers (like small tank) have to delay more.
 
 #include "stdafx.h"
 #include "Jll Server.h"
