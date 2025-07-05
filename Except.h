@@ -47,10 +47,13 @@ public:
 		OkInfo = 0,
 		FileIsDirAttributed,
 		BadFileCountInTOC,
-		BArchiveOverflow
+		BArchiveOverflow,
+		InvalidFindFile
 	};
 	CInfoException( int nStatus ) : m_nError( nStatus ) {}
+	static LPCSTR TranslateCause( int nCause );
 	virtual void Handler() const;
+	int GetError() const { return m_nError; }
 private:
 	int m_nError;
 #ifdef _DEBUG
@@ -107,6 +110,8 @@ public:
     void CounterExceedToCheck( int nNum = 3000 )
 		{ if( m_nCountBeforeCheck <= nNum ) m_nCountBeforeCheck ++; else CheckTimeout(); }
 	void CheckTimeout() const;
+	ULONGLONG GetFrequency() const
+		{ return m_i64Freq; }
 	static ULONGLONG GetQPCTime();
 	static void Delay( ULONGLONG count );
 protected:

@@ -3,30 +3,31 @@
 [General Info]
 Version=1
 LastClass=CJllServerView
-LastTemplate=CButton
+LastTemplate=CComboBox
 NewFileInclude1=#include "stdafx.h"
 NewFileInclude2=#include "Jll Server.h"
 LastPage=0
 
-ClassCount=9
+ClassCount=10
 Class1=CJllServerApp
 Class2=CJllServerDoc
 Class3=CJllServerView
 Class4=CMainFrame
 
 ResourceCount=8
-Resource1=IDD_FILEOPENORD
+Resource1=IDR_MAINFRAME
 Class5=CAboutDlg
 Resource2=IDR_TASKBAR_MENU
 Resource3=IDD_DIALOGBAR (English (U.S.))
-Resource4=IDR_MAINFRAME
+Resource4=IDD_DIALOGBAR
 Resource5=IDD_CHOOSEDIR_DIALOG (English (U.S.))
 Class6=CChooseDirDlg
 Class7=CNibbleModeProto
 Class8=CExceptDlg
-Resource6=IDD_DIALOGBAR
+Resource6=IDD_ABOUTBOX
 Class9=CButtonStyle
-Resource7=IDD_ABOUTBOX
+Resource7=IDD_FILEOPENORD
+Class10=CFolderCombo
 Resource8=IDD_EXCEPTBOX
 
 [CLS:CJllServerApp]
@@ -140,11 +141,10 @@ CommandCount=10
 
 [DLG:IDD_DIALOGBAR (English (U.S.))]
 Type=1
-ControlCount=4
+ControlCount=3
 Control1=IDC_BUTTON_FOR_DIR,button,1342245888
-Control2=IDC_EDIT_FOR_DIR,edit,1350631552
+Control2=IDC_STATIC,static,1342308876
 Control3=IDC_STATIC,static,1342308876
-Control4=IDC_STATIC,static,1342308876
 Class=CJllServerView
 
 [DLG:IDD_DIALOGBAR]
@@ -152,11 +152,11 @@ Type=1
 Class=CJllServerView
 ControlCount=6
 Control1=IDC_BUTTON_FOR_DIR,button,1342245888
-Control2=IDC_EDIT_FOR_DIR,edit,1350633600
-Control3=IDC_STATIC,static,1342308864
-Control4=IDC_GRP_FRAME,button,1342308359
-Control5=IDC_BUTTON_RESET_DIR,button,1342242827
-Control6=IDC_BUTTON_SET_DIR,button,1342242827
+Control2=IDC_STATIC,static,1342308864
+Control3=IDC_GRP_FRAME,button,1342308359
+Control4=IDC_BUTTON_RESET_DIR,button,1342242827
+Control5=IDC_BUTTON_SET_DIR,button,1342242827
+Control6=IDC_COMBO_FOR_DIR,combobox,1344340227
 
 [DLG:IDD_CHOOSEDIR_DIALOG (English (U.S.))]
 Type=1
@@ -239,4 +239,13 @@ Command1=ID_APP_ABOUT
 Command2=IDR_TASKBAR_MENU_SHOW
 Command3=ID_APP_EXIT
 CommandCount=3
+
+[CLS:CFolderCombo]
+Type=0
+HeaderFile=jll serverview.h
+ImplementationFile=jll serverview.cpp
+BaseClass=CComboBox
+Filter=W
+LastObject=CFolderCombo
+VirtualFilter=cWC
 

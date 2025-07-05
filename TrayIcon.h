@@ -42,7 +42,7 @@ class CTrayIconMouseMsgHandler : public CObject
 {
 public:
 	CTrayIconMouseMsgHandler(UINT uMouseMsgID = WM_LBUTTONDBLCLK) { m_uMouseMsgID = uMouseMsgID; }
-	UINT GetMouseMsgID() { return m_uMouseMsgID;	}
+	UINT GetMouseMsgID() { return m_uMouseMsgID; } const
 	void SetMouseMsgID(UINT uMouseMsgID) { m_uMouseMsgID = uMouseMsgID; }
 	void SetTrayIcon(CTrayIcon* pTrayIcon) { m_pTrayIcon = pTrayIcon; }
 	virtual void MouseMsgHandler() = 0;
@@ -50,6 +50,18 @@ protected:
 	CTrayIcon* m_pTrayIcon;
 private:
 	UINT m_uMouseMsgID;
+};
+
+// CLeftMouseClickMsgHandler is added for the reason that CLeftMouseDblClickMsgHandler
+// sometimes is not sensible enough.
+
+class CLeftMouseClickMsgHandler : public CTrayIconMouseMsgHandler
+{
+public:
+	CLeftMouseClickMsgHandler();
+	virtual void MouseMsgHandler();
+private:
+	ULONGLONG m_i64LastTime;
 };
 
 class CLeftMouseDblClickMsgHandler : public CTrayIconMouseMsgHandler

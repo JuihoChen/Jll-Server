@@ -15,10 +15,41 @@ static char THIS_FILE[]=__FILE__;
 #define new DEBUG_NEW
 #endif
 
+// determine number of elements in an array (not bytes)
+#define _countof(array) (sizeof(array)/sizeof(array[0]))
+
 IMPLEMENT_DYNAMIC( CExcptClass, CException )
 IMPLEMENT_DYNAMIC( CCheckStatusException, CExcptClass )
 IMPLEMENT_DYNAMIC( CInfoException, CExcptClass )
 IMPLEMENT_DYNAMIC( CTimerException, CExcptClass )
+
+LPCSTR CInfoException::TranslateCause( int nCause )
+{
+	static const LPCSTR rgszCFileExceptionCause[] =
+	{
+		"none",
+		"generic",
+		"fileNotFound",
+		"badPath",
+		"tooManyOpenFiles",
+		"accessDenied",
+		"invalidFile",
+		"removeCurrentDir",
+		"directoryFull",
+		"badSeek",
+		"hardIO",
+		"sharingViolation",
+		"lockViolation",
+		"diskFull",
+		"endOfFile",
+	};
+	static const char szUnknown[] = "unknown";
+
+	if (nCause >= 0 && nCause < _countof(rgszCFileExceptionCause))
+		return rgszCFileExceptionCause[nCause];
+	else
+		return szUnknown;
+}
 
 void CInfoException::Handler() const
 {
@@ -34,6 +65,9 @@ void CInfoException::Handler() const
 		break;
 	case BArchiveOverflow:
 		sTemp = "InfoError: buffer archive of communication overflow.\n";
+		break;
+	case InvalidFindFile:
+		sTemp = "InfoError: The network path was not found.\n";
 		break;
 	default:
 		sTemp.Format( "InfoError: erroneous status <%d> thrown!\n", m_nError );

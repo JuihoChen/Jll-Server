@@ -18,6 +18,44 @@
 #include <afxext.h>
 #endif
 
+/////////////////////////////////////////////////////////////////////////////
+// CFolderCombo window
+
+class CFolderCombo : public CComboBox
+{
+// Construction
+public:
+	CFolderCombo();
+
+// Attributes
+public:
+
+// Operations
+public:
+
+// Overrides
+	// ClassWizard generated virtual function overrides
+	//{{AFX_VIRTUAL(CFolderCombo)
+	public:
+	//}}AFX_VIRTUAL
+
+// Implementation
+public:
+	void Initialize();
+	void CleanUp() const;
+	BOOL SetCurText( const CString sText );
+	CString GetCurText() const;
+	virtual ~CFolderCombo();
+
+	// Generated message map functions
+protected:
+	//{{AFX_MSG(CFolderCombo)
+	//}}AFX_MSG
+
+	DECLARE_MESSAGE_MAP()
+};
+
+/////////////////////////////////////////////////////////////////////////////
 class CJllServerView : public CFormView
 {
 	DECLARE_DYNCREATE(CJllServerView)
@@ -28,11 +66,11 @@ protected:
 public:
 	//{{AFX_DATA(CJllServerView)
 	enum { IDD = IDD_DIALOGBAR };
+	CFolderCombo m_cStartingFolder;
 	CBitmapButton m_cButtonSetDir;
 	CButtonStyle m_cButtonResetDir;
 	CButton	m_cGroupFrame;
 	CButton	m_cButtonForDir;
-	CString	m_sStartingFolder;
 	//}}AFX_DATA
 
 // Attributes
@@ -72,6 +110,8 @@ protected:
 	afx_msg void OnButtonForDir();
 	afx_msg void OnButtonResetDir();
 	afx_msg void OnButtonSetDir();
+	afx_msg void OnSelchangeComboForDir();
+	afx_msg void OnDestroy();
 	//}}AFX_MSG
 	afx_msg BOOL OnToolTipNotify(UINT id, NMHDR* pTTTStruct, LRESULT* pResult);
 	DECLARE_MESSAGE_MAP()

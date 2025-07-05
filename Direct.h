@@ -50,7 +50,9 @@ public:
 		NgBadFieldInCDB,
 		NgImproperComSeq,
 		NgIncrctFiIndex,
-		NgMediaChanged
+		NgMediaChanged,
+		NgBadCRCInComm,
+		NgFileException
 	};
 	enum {
 		b7_Lock = 0x80,

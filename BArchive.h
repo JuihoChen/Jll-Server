@@ -107,7 +107,7 @@ public:
 	BOOL operator!=( const CFileInfo& other ) const;
 	CFileInfo& operator=( const CFileInfo& other );
 protected:
-	void GetStatus();
+	void GetStatus( BOOL fTryNetpath = FALSE );
 	///void SetStatus();
 	///void WriteFile( DWORD dwStart, UINT nLen, CDirectCable& dcc );
 	void ReadFile( DWORD dwStart, UINT nLen, CDirectCable& dcc );

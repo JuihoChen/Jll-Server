@@ -78,7 +78,6 @@ protected:  // control bar embedded members
 // Generated message map functions
 protected:
 	//{{AFX_MSG(CMainFrame)
-	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnUpdateFileSave(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateFileSaveAs(CCmdUI* pCmdUI);
 	afx_msg void OnTimer(UINT nIDEvent);
@@ -86,6 +85,7 @@ protected:
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnTaskbarMenuShow();
 	afx_msg void OnUpdateEditDisablewarmpoll(CCmdUI* pCmdUI);
+	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	//}}AFX_MSG
 	afx_msg void OnUpdatePercentDone(CCmdUI* pCmdUI);
 	afx_msg void OnDetectSpkOn(UINT nID);

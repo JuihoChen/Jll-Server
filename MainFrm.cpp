@@ -22,7 +22,6 @@ IMPLEMENT_DYNCREATE(CMainFrame, CFrameWnd)
 
 BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	//{{AFX_MSG_MAP(CMainFrame)
-	ON_WM_CREATE()
 	ON_UPDATE_COMMAND_UI(ID_FILE_SAVE, OnUpdateFileSave)
 	ON_UPDATE_COMMAND_UI(ID_FILE_SAVE_AS, OnUpdateFileSaveAs)
 	ON_WM_TIMER()
@@ -30,6 +29,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWnd)
 	ON_WM_SYSCOMMAND()
 	ON_COMMAND(IDR_TASKBAR_MENU_SHOW, OnTaskbarMenuShow)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_DISABLEWARMPOLL, OnUpdateEditDisablewarmpoll)
+	ON_WM_CREATE()
 	//}}AFX_MSG_MAP
 	ON_MESSAGE(UWM_CPY_PROGRS, OnCopyProgress)
 	ON_MESSAGE(UWM_EXCEPT_BOX, OnExceptionBox)
@@ -137,10 +137,11 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 void CMainFrame::SetupTrayIcon()
 {
-	MouseMsgHandlerPtr *aHandler = new MouseMsgHandlerPtr[2];
+	MouseMsgHandlerPtr *aHandler = new MouseMsgHandlerPtr[3];
 
-	aHandler[0] = new CLeftMouseDblClickMsgHandler();
-	aHandler[1] = new CRightMouseClickMsgHandler( IDR_TASKBAR_MENU );
+	aHandler[0] = new CLeftMouseClickMsgHandler();
+	aHandler[1] = new CLeftMouseDblClickMsgHandler();
+	aHandler[2] = new CRightMouseClickMsgHandler( IDR_TASKBAR_MENU );
 
 	m_hIconDisconnect = ::LoadIcon( ::AfxGetInstanceHandle(), MAKEINTRESOURCE(IDI_ICON_DISCONN) );
 	m_hIconConnected  = ::LoadIcon( ::AfxGetInstanceHandle(), MAKEINTRESOURCE(IDI_ICON_CONNECT) );
@@ -149,7 +150,7 @@ void CMainFrame::SetupTrayIcon()
 	SetIcon( m_hIconDisconnect, FALSE );
 
 	m_cTrayIcon.SetTrayIcon( m_hWnd, IDR_MAINFRAME, m_hIconDisconnect, AfxGetAppName() );
-	m_cTrayIcon.SetMouseMsgHandler( aHandler, 2 );
+	m_cTrayIcon.SetMouseMsgHandler( aHandler, 3 );
 }
 
 BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
@@ -379,7 +380,7 @@ LRESULT CMainFrame::OnAreYouMe( WPARAM, LPARAM )
 void CMainFrame::OnClose()
 {
 	// TODO: Add your message handler code here and/or call default
-	_OutputDebugString( "Main frame>OnClose.\n" );
+	_OutputDebugString( "Main frame>OnClose Begins.\n" );
 	
 	if( m_pTheServer->IsRunning() )
 	{
@@ -392,6 +393,7 @@ void CMainFrame::OnClose()
 	}
 
 	CFrameWnd::OnClose();
+	_OutputDebugString( "Main frame>OnClose Ends.\n" );
 }
 
 void CMainFrame::OnDetectSpkOn(UINT nID) 

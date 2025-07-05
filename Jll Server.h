@@ -27,8 +27,8 @@ class CJllServerApp : public CWinApp
 public:
 	static BOOL CALLBACK Searcher(HWND hWnd, LPARAM lParam);
 	BOOL AvoidMultipleInstances() const;
-	void StoreProfileStrings();
-	void LoadProfileStrings();
+	void StoreProfileStrings(int nIndex = 0, LPCSTR pzText = NULL);
+	CString LoadProfileStrings(int nIndex = 0);
 	CJllServerApp();
 
 	CString m_sStartingDir;

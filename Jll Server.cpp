@@ -31,6 +31,7 @@
 //     v0.20   DEC 28, 2004   make some decorations.
 //             DEC 31, 2004   fix bug editing "DisableWarmPoll" when missing key "Parameters".
 //     v0.21   FEB 03, 2005   use SHBrowseForFolder to pick the working directory.
+//     v0.22   APR 21, 2005   report error to Guest if pathname read/finding error.
 
 #include "stdafx.h"
 #include "Jll Server.h"
@@ -105,8 +106,9 @@ BOOL CALLBACK CJllServerApp::Searcher( HWND hWnd, LPARAM lParam )
 BOOL CJllServerApp::AvoidMultipleInstances() const
 {
 	HANDLE hMutexOneInstance = ::CreateMutex( NULL, FALSE, UWM_ARE_YOU_ME_MSG );
-	BOOL bAlreadyRunning = (GetLastError() == ERROR_ALREADY_EXISTS ||
-							GetLastError() == ERROR_ACCESS_DENIED);
+	DWORD dwError = GetLastError();
+	BOOL bAlreadyRunning = (dwError == ERROR_ALREADY_EXISTS ||
+							dwError == ERROR_ACCESS_DENIED);
 
 	// The call fails with ERROR_ACCESS_DENIED if the Mutex was
 	// created in a different users session because of passing
@@ -331,30 +333,49 @@ void CJllServerApp::OnFileNew()
 	CWinApp::OnFileNew();
 }
 
-void CJllServerApp::LoadProfileStrings()
+CString CJllServerApp::LoadProfileStrings(int nIndex /* = 0 */)
 {
-	CString strSection    = "Jll Section";
-	CString strStringItem = "Starting Directory";
-	CString strIntItem    = "Detecting Speaker";
+	ASSERT( nIndex >= 0 && nIndex < 10 );
 
-	m_sStartingDir = GetProfileString( strSection, strStringItem, "C:\\" );
-	if( ::SetCurrentDirectory( m_sStartingDir ) == FALSE )
+	CString strSection = "Jll Section";
+	CString strStringItem;
+
+	if( nIndex == 0 )
 	{
-		char szPath[ 1024 ];			// Buffer to hold path information
-		::GetCurrentDirectory( sizeof szPath, szPath );
-		m_sStartingDir = szPath;
+		strStringItem = "Starting Directory";
+		m_sStartingDir = GetProfileString( strSection, strStringItem, "C:\\" );
+		if( ::SetCurrentDirectory( m_sStartingDir ) == FALSE )
+		{
+			char szPath[ 1024 ];			// Buffer to hold path information
+			::GetCurrentDirectory( sizeof szPath, szPath );
+			m_sStartingDir = szPath;
+		}
+		m_bDetectSpkOn = GetProfileInt( strSection, "Detecting Speaker", 0 );
+		return m_sStartingDir;
 	}
-
-	m_bDetectSpkOn = GetProfileInt( strSection, strIntItem, 0 );
+	else
+	{
+		strStringItem.Format( "Saved Folder %d", nIndex );
+		return GetProfileString( strSection, strStringItem );
+	}
 }
 
-void CJllServerApp::StoreProfileStrings()
+void CJllServerApp::StoreProfileStrings(int nIndex /* = 0 */, LPCSTR pzText /* = NULL */)
 {
-	CString strSection    = "Jll Section";
-	CString strStringItem = "Starting Directory";
+	ASSERT( nIndex >= 0 && nIndex < 10 );
 
-	BOOL bRet = WriteProfileString( strSection, strStringItem, m_sStartingDir );
-	ASSERT( bRet == TRUE );
+	CString strSection = "Jll Section";
+	CString strStringItem;
+
+	if( nIndex == 0 )
+		strStringItem = "Starting Directory";
+	else
+		strStringItem.Format( "Saved Folder %d", nIndex );
+
+	if( pzText )
+		VERIFY( WriteProfileString( strSection, strStringItem, pzText ) == TRUE );
+	else
+		WriteProfileString( strSection, strStringItem, pzText );
 }
 
 void CJllServerApp::OnEditDisablewarmpoll() 

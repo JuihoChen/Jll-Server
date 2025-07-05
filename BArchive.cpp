@@ -128,7 +128,7 @@ void CBArchive::AssertValid() const
 CFile CFileInfo::m_fiArchive;
 BOOL CFileInfo::m_bFileInUse = FALSE;
 
-void CFileInfo::GetStatus()
+void CFileInfo::GetStatus( BOOL fTryNetpath /* = FALSE */)
 // a GetStatus member is defined for reasons:
 // a. use static version of CFile::GetStatus to get attribute right.
 // b. size of CFileStatus is big.
@@ -136,13 +136,19 @@ void CFileInfo::GetStatus()
 {
 	ASSERT_VALID( this );
 	ASSERT( m_sFileName.IsEmpty() == FALSE );
-#if 1 /// v0.16
+
 	// some old MS-DOS files incur system assertion!
 	// and we have to make operation on.... (v0.16)
 	WIN32_FIND_DATA findFileData;
 	HANDLE hFind = FindFirstFile( m_sFileName, &findFileData );
+	// pathname on network need wildcards to find!
+	if( hFind == INVALID_HANDLE_VALUE && fTryNetpath )
+	{
+		hFind = FindFirstFile( CDirectCable::ConcatDir( m_sFileName, _ALLFILES ), &findFileData );
+	}
 	if( hFind == INVALID_HANDLE_VALUE )
 	{
+		TRACE2( "FindFirstFile (%s) not successful - GetLastError = %d\n", (LPCSTR) m_sFileName, GetLastError() );
 		THROW( new CFileException( CFileException::fileNotFound ) );
 	}
 	VERIFY( FindClose( hFind ) );
@@ -166,18 +172,6 @@ void CFileInfo::GetStatus()
 		FileTimeToDosDateTime( &localTime, &date, &time );
 
 	m_mtime = CTimeDos( date, time );
-#else
-	// *!* Use static version of GetStatus to get attribute right *!*
-	CFileStatus fsStat;
-	if( CFile::GetStatus( m_sFileName, fsStat ) == FALSE )
-	{
-		THROW( new CFileException( CFileException::fileNotFound ) );
-	}
-
-	m_mtime = fsStat.m_mtime;
-	m_size = fsStat.m_size;
-	m_attribute = fsStat.m_attribute;
-#endif
 }
 
 void CFileInfo::ReadFile( DWORD dwStart, UINT nLen, CDirectCable& dcc )
@@ -232,7 +226,7 @@ BOOL CFileInfo::IsEqual( const CFileInfo& other ) const
 	// pos = -1 if '\\' not found in string.
 	int pos = m_sFileName.ReverseFind( '\\' );
 
-	if( m_sFileName.Mid( pos + 1 ) != other.m_sFileName ) return FALSE;
+	if( m_sFileName.Mid( pos + 1 ).CompareNoCase( other.m_sFileName ) ) return FALSE;
 	if( m_size != other.m_size ) return FALSE;
 	if( m_attribute != other.m_attribute ) return FALSE;
 	if( m_mtime != other.m_mtime ) return FALSE;

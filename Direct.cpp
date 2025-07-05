@@ -140,14 +140,8 @@ CString CDirectCable::GetString( int nIndex, int nMaxLen ) const
 	ASSERT( nIndex <= BF_MAXLEN && (nIndex + nMaxLen - 1) <= BF_MAXLEN );
 
 	char szBuffer[ _MAX_PATH + 1 ];
-	for( int i = 0; i < nMaxLen; i ++, nIndex ++ )
-	{
-		if( m_fpBuffer[ nIndex ] == '\0' || isspace( m_fpBuffer[ nIndex ] ) )
-			break;
-		szBuffer[ i ] = m_fpBuffer[ nIndex ];
-	}
-	szBuffer[ i ] = '\0';
-
+	memset( szBuffer, 0, sizeof szBuffer );
+	strncpy( szBuffer, (LPCSTR) m_fpBuffer + nIndex, nMaxLen );
 	return szBuffer;
 }
 
@@ -405,16 +399,21 @@ void CDCServer::SendData()
 		return;
 	}
 
-	RetCheckStatus( OkStatus );
+	TRY
+	{
+		m_fiInfo.ReadFile( dwStartAddress, wTransferLen, *this );
+	}
+	CATCH( CFileException, e )
+	{
+		FormatOutput( "Error: caught a file exception <%d> -- %s.",
+			e->m_cause, CInfoException::TranslateCause( e->m_cause ) );
 
-	/****************************************************************
-	static BYTE abSticks[4] = { '-', '\\', '|', '/' };
-	static int nStickNo = 0;
-	FormatOutput( "%c\r", abSticks[ nStickNo ] );
-	nStickNo = (nStickNo + 1) & 0x3;
-	****************************************************************/
+		RetCheckStatus( NgFileException );
+		return;
+	}
+	END_CATCH
 
-	m_fiInfo.ReadFile( dwStartAddress, wTransferLen, *this );
+	RetCheckStatus( OkStatus );				// v0.22! Here's a chance to report error
 
 	if( bAttribute & b7_NCRC )				// CRC codeword not to be appended?
 		(this->*m_pfnSendFromBuffer)( wTransferLen );
@@ -470,30 +469,12 @@ void CDCServer::ChangeDir()
 		goto _goSend;
 	}
 
-	m_fiInfo.m_sFileName = ConcatDir( m_sDirName, m_aFiInfoBase[ nIndex ]->m_sFileName );
-
-	TRY
-	{
-		m_fiInfo.GetStatus();
-	}
-	CATCH( CFileException, e )
-	{
-		TRACE( " ==> could not retrieve status, zero the attribute byte.\n" );
-
-		m_fiInfo.m_attribute = 0;
-	}
-	END_CATCH
-
 	// check to see if go up for mother-dir
 	if( m_aFiInfoBase[ nIndex ]->m_sFileName == _PARENT_DIR )
 	{
 		int pos = m_sDirName.ReverseFind( '\\' );
 		if( pos != -1 )
-		{
-			// Copy file information for equal comparison below.
-			m_sDirName = m_sDirName.Left( pos );
-			m_fiInfo = *m_aFiInfoBase[ nIndex ];
-		}
+			m_fiInfo.m_sFileName = m_sDirName.Left( pos );
 		else   /// HERE MUST BE AN IMPOSSIBLE SITUATION.
 		{
 			TRACE( "System Error: TOC might have been corrupted.\n" );
@@ -502,13 +483,38 @@ void CDCServer::ChangeDir()
 			return;
 		}
 	}
+	else
+		m_fiInfo.m_sFileName = ConcatDir( m_sDirName, m_aFiInfoBase[ nIndex ]->m_sFileName );
+
+	TRY
+	{
+		m_fiInfo.GetStatus( TRUE );
+	}
+	CATCH( CFileException, e )
+	{
+		TRACE( " ==> could not retrieve status, invalid path name.\n" );
+
+		RetCheckStatus( NgFileException );
+		FormatOutput( "Error: <%s> could be an invalid network path.", (LPCSTR) m_fiInfo.m_sFileName );
+		return;
+	}
+	END_CATCH
+
+	// check to see if go up for mother-dir
+	if( m_aFiInfoBase[ nIndex ]->m_sFileName == _PARENT_DIR )
+	{
+		m_sDirName = m_fiInfo.m_sFileName;
+
+		// then, Copy file information for equal comparison below.
+		m_fiInfo = *m_aFiInfoBase[ nIndex ];
+	}
 
 	if( (m_fiInfo.m_attribute & CFile::directory) && m_fiInfo == *m_aFiInfoBase[ nIndex ] )
 	{
-		// not going up for mother-dir
+		// not going up for mother-dir (co's her name's "..")
 		if( m_fiInfo.m_sFileName != _PARENT_DIR )
 		{
-			m_sDirName = ConcatDir( m_sDirName, m_aFiInfoBase[ nIndex ]->m_sFileName );
+			m_sDirName = m_fiInfo.m_sFileName;
 		}
 	}
 	else
@@ -533,9 +539,7 @@ _goSend:
 void CDCServer::SendTOC()
 {
 	ASSERT_VALID( this );
-	WORD nAllocLen = __min( GetWord( 6 ), BF_MAXLEN );
-
-	CreateTOC( nAllocLen );		// pass TRUEed fResp!
+	CreateTOC( __min( GetWord( 6 ), BF_MAXLEN ) );		// pass TRUEed fResp!
 }
 
 // Create a TOC array.
@@ -569,8 +573,13 @@ void CDCServer::CreateTOC( WORD nAlloc, BOOL fResp /* = TRUE */)
 
 		if( INVALID_HANDLE_VALUE == hFile )
 		{
-			TRACE0( "FindFirstFile returned INVALID_HANDLE_VALUE.\n" );
-			AfxThrowFileException( CFileException::invalidFile, GetLastError() );
+			int dwError = GetLastError();
+			TRACE1( "FindFirstFile returned INVALID_HANDLE_VALUE - %d.\n", dwError );
+
+			if( dwError == ERROR_BAD_NETPATH )
+				THROW( new CInfoException( CInfoException::InvalidFindFile ) );
+			else
+				AfxThrowFileException( CFileException::invalidFile, dwError );
 		}
 
 		// Next, loop through everything in the directory. If the found file
@@ -613,6 +622,18 @@ void CDCServer::CreateTOC( WORD nAlloc, BOOL fResp /* = TRUE */)
 	}
 	CATCH( CInfoException, e )
 	{
+		if( e->GetError() == CInfoException::InvalidFindFile )
+		{
+			FormatOutput( "Error: caught an info. exception: bad network path." );
+			if( fResp )
+			{
+				RetCheckStatus( NgFileException );
+				return;
+			}
+			else
+				AfxThrowFileException( CFileException::invalidFile, ERROR_BAD_NETPATH );
+		}
+
 		TRACE( " ==> revise/fake bar pointer for checking.\n" );
 
 		// update pointer for error check in destructor,
@@ -626,13 +647,6 @@ void CDCServer::CreateTOC( WORD nAlloc, BOOL fResp /* = TRUE */)
 	// check the collected file info. for TOC
 	if( m_pTocAr->GetSize() > (int)(nAlloc / _FI_LEN) )
 	{
-/**********************************************************
-		if( fResp )
-		{
-			RetCheckStatus( NgBadFieldInCDB );
-			return;
-		}
-**********************************************************/
 		TRACE( "==> Occurred Weird logic (should not be shown here)!\n" );
 	}
 
@@ -882,7 +896,8 @@ UINT CDCServer::DoWork()
 	}
 	AND_CATCH( CFileException, e )
 	{
-		FormatOutput( "Error: caught a file exception <%d>.", e->m_cause );
+		FormatOutput( "Error: caught a file exception <%d> -- %s.",
+			e->m_cause, CInfoException::TranslateCause( e->m_cause ) );
 	}
 	AND_CATCH( CException, e )
 	{

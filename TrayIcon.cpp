@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "Jll Server.h"
+#include "Except.h"
 #include "TrayIcon.h"
 
 IMPLEMENT_DYNAMIC( CTrayIcon, CObject )
@@ -134,6 +136,22 @@ BOOL CTrayIcon::ModifyIcon(HICON hIcon, LPCSTR lpToolTip /* = NULL */)
 	}
 	else
 		return FALSE;
+}
+
+CLeftMouseClickMsgHandler::CLeftMouseClickMsgHandler() : CTrayIconMouseMsgHandler(WM_LBUTTONUP)
+{
+	m_i64LastTime = gblQPCTimer.GetQPCTime();
+}
+
+void CLeftMouseClickMsgHandler::MouseMsgHandler()
+{
+	ULONGLONG i64Diff = gblQPCTimer.GetQPCTime() - m_i64LastTime;
+	if( (i64Diff * 10) / gblQPCTimer.GetFrequency() <= 3 )	// range is 0 ~ 399 ms
+	{
+		ASSERT_KINDOF( CTrayIcon, m_pTrayIcon );
+		m_pTrayIcon->RestoreWindow();
+	}
+	m_i64LastTime = gblQPCTimer.GetQPCTime();
 }
 
 void CLeftMouseDblClickMsgHandler::MouseMsgHandler()
