@@ -9,7 +9,7 @@
 
 #ifdef _DEBUG
 #undef THIS_FILE
-static char THIS_FILE[]=__FILE__;
+static const char * THIS_FILE = __FILE__;
 #define new DEBUG_NEW
 #endif
 
@@ -40,7 +40,7 @@ BOOL CParPort::TestPort()
 {
 	// Check if PRN driver found okay in the XP system?
 	HANDLE hLpt = CreateFile(
-		"\\\\.\\LPT1",
+		L"\\\\.\\LPT1",
 		GENERIC_READ | GENERIC_WRITE,
 		0,									// exclusive access 
 		NULL,
@@ -159,24 +159,24 @@ CNibbleModeProto::~CNibbleModeProto()
 LONG CNibbleModeProto::GetLptPortInTheRegistry( CString myKey, int myPort )
 {
 	HKEY phkResult;
-	char myData[255];
+	wchar_t myData[255];
 	LONG res;
 	DWORD mySize;
 	DWORD myType;
 
-	sprintf( myData, "%s\\%d", (LPCSTR) myKey, myPort );
+	swprintf( myData, _countof(myData), L"%s\\%d", (LPCTSTR) myKey, myPort );
 	TRACE1( "key value for \"Configuration Data\" = %s\n", myData );
 
 	res = RegOpenKeyEx( HKEY_LOCAL_MACHINE, myData, 0, KEY_READ, &phkResult );
 	if( res != ERROR_SUCCESS )
 		return (-1);
 
-	mySize = sizeof myData;
+	mySize = _countof(myData);
 	myType = REG_BINARY;
 
 	res = RegQueryValueEx(
 			phkResult,					// handle to key to query
-			"Configuration Data",		// address of name of value to query
+			L"Configuration Data",	// address of name of value to query
 			NULL,						// reserved
 			&myType,					// address of buffer for value type
 			(LPBYTE)myData,				// address of data buffer
@@ -191,7 +191,7 @@ LONG CNibbleModeProto::GetLptPortInTheRegistry( CString myKey, int myPort )
 LONG CNibbleModeProto::GetParallelControllerKey( CString& rKey )
 {
 	HKEY hKey;
-	char myData[255];
+	wchar_t myData[255];
 	LONG res;
 	DWORD mySize;
 	FILETIME ftLastWriteTime;
@@ -199,7 +199,7 @@ LONG CNibbleModeProto::GetParallelControllerKey( CString& rKey )
 	rKey.Empty();
 
 	CString myKey;
-	myKey.Format( "HARDWARE\\DESCRIPTION\\System" );
+	myKey.Format( L"HARDWARE\\DESCRIPTION\\System" );
 
 	res = RegOpenKeyEx( HKEY_LOCAL_MACHINE, myKey, 0, KEY_READ, &hKey );
  
@@ -210,7 +210,7 @@ LONG CNibbleModeProto::GetParallelControllerKey( CString& rKey )
 	CString myKey1;
 	for( dwIndex1 = 0; dwIndex1 <= 10; dwIndex1 ++ )
 	{
-		mySize = sizeof myData;
+		mySize = _countof(myData);
 		res = RegEnumKeyEx( hKey, dwIndex1, myData, &mySize, NULL, NULL, NULL, &ftLastWriteTime );
          
 		if( res == ERROR_SUCCESS ) // ERROR_SUCCESS 1
@@ -227,7 +227,7 @@ LONG CNibbleModeProto::GetParallelControllerKey( CString& rKey )
 			CString myKey2;
 			for( dwIndex2 = 0; dwIndex2 <= 10; dwIndex2 ++ )
 			{
-				mySize = sizeof myData;
+				mySize = _countof(myData);
 				res = RegEnumKeyEx( hKey1, dwIndex2, myData, &mySize, NULL, NULL, NULL, &ftLastWriteTime );
          
 				if( res == ERROR_SUCCESS ) // ERROR_SUCCESS 2
@@ -243,12 +243,12 @@ LONG CNibbleModeProto::GetParallelControllerKey( CString& rKey )
 					DWORD dwIndex3;
 					for( dwIndex3 = 0; dwIndex3 <= 10; dwIndex3 ++ )
 					{
-						mySize = sizeof myData;
+						mySize = _countof(myData);
 						res = RegEnumKeyEx( hKey2, dwIndex3, myData, &mySize, NULL, NULL, NULL, &ftLastWriteTime );
          
 						if( res == ERROR_SUCCESS ) // ERROR_SUCCESS 3
 						{
-							if( 0 == stricmp( myData, "ParallelController" ) )
+							if( 0 == _tcsicmp( myData, L"ParallelController" ) )
 							{
 								rKey = myKey2 + "\\" + myData;
 								return 0;
@@ -266,14 +266,14 @@ LONG CNibbleModeProto::GetParallelControllerKey( CString& rKey )
 LONG CNibbleModeProto::GetLptPortInACPI()
 {
 	HKEY hKey;
-	char myData[255];
+	wchar_t myData[255];
 	LONG res;
 	DWORD mySize;
 	DWORD myType;
 	FILETIME ftLastWriteTime;
 
 	CString myKey;
-	myKey.Format( "SYSTEM\\CurrentControlSet\\Enum\\ACPI" );
+	myKey.Format( L"SYSTEM\\CurrentControlSet\\Enum\\ACPI" );
 
 	res = RegOpenKeyEx( HKEY_LOCAL_MACHINE, myKey, 0, KEY_READ, &hKey );
  
@@ -284,7 +284,7 @@ LONG CNibbleModeProto::GetLptPortInACPI()
 	CString myKey1;
 	for( dwIndex1 = 0; dwIndex1 <= 20; dwIndex1 ++ )	// loop for ...ACPI\PNP0xxx
 	{
-		mySize = sizeof myData;
+		mySize = _countof(myData);
 		res = RegEnumKeyEx( hKey, dwIndex1, myData, &mySize, NULL, NULL, NULL, &ftLastWriteTime );
          
 		if( res == ERROR_SUCCESS ) // ERROR_SUCCESS 1
@@ -301,7 +301,7 @@ LONG CNibbleModeProto::GetLptPortInACPI()
 			CString myKey2;
 			for( dwIndex2 = 0; dwIndex2 <= 10; dwIndex2 ++ )	// loop for ACPI\PNP0xxx\4&61f3b4b&0
 			{
-				mySize = sizeof myData;
+				mySize = _countof(myData);
 				res = RegEnumKeyEx( hKey1, dwIndex2, myData, &mySize, NULL, NULL, NULL, &ftLastWriteTime );
          
 				if( res == ERROR_SUCCESS ) // ERROR_SUCCESS 2
@@ -315,12 +315,12 @@ LONG CNibbleModeProto::GetLptPortInACPI()
 						return (-1);
          
 					/****************************************/
-					mySize = sizeof myData;
+					mySize = _countof(myData);
 					myType = REG_SZ;
 
 					res = RegQueryValueEx(
-							hKey2,			// handle to key to query
-							"Service",			// address of name of value to query
+							hKey2,				// handle to key to query
+							L"Service",			// address of name of value to query
 							NULL,				// reserved
 							&myType,			// address of buffer for value type
 							(LPBYTE)myData,		// address of data buffer
@@ -329,7 +329,7 @@ LONG CNibbleModeProto::GetLptPortInACPI()
 					if( res != ERROR_SUCCESS )
 						continue;
 
-					if( 0 != stricmp( myData, "Parport"  ) )
+					if( 0 != _tcsicmp( myData, L"Parport"  ) )
 						continue;
 
 					/****************************************/
@@ -340,12 +340,12 @@ LONG CNibbleModeProto::GetLptPortInACPI()
 					if( res != ERROR_SUCCESS )
 						continue;
 
-					mySize = sizeof myData;
+					mySize = _countof(myData);
 					myType = REG_SZ;
 
 					res = RegQueryValueEx(
 						hKey3,				// handle to key to query
-						"PortName",			// address of name of value to query
+						L"PortName",		// address of name of value to query
 						NULL,				// reserved
 						&myType,			// address of buffer for value type
 						(LPBYTE)myData,		// address of data buffer
@@ -354,7 +354,7 @@ LONG CNibbleModeProto::GetLptPortInACPI()
 					if( res != ERROR_SUCCESS )
 						continue;
 
-					if( 0 != stricmp( myData, "LPT1" ) )
+					if( 0 != _tcsicmp( myData, L"LPT1" ) )
 						continue;
 
 					/****************************************/
@@ -364,12 +364,12 @@ LONG CNibbleModeProto::GetLptPortInACPI()
 					if( res != ERROR_SUCCESS )
 						continue;
 
-					mySize = sizeof myData;
+					mySize = _countof(myData);
 					myType = REG_SZ;
 
 					res = RegQueryValueEx(
 						hKey3,				// handle to key to query
-						"AllocConfig",		// address of name of value to query
+						L"AllocConfig",		// address of name of value to query
 						NULL,				// reserved
 						&myType,			// address of buffer for value type
 						(LPBYTE)myData,		// address of data buffer
@@ -629,7 +629,7 @@ void CNibbleModeProto::WriteByteToPort( BYTE bByteToWrite ) const
 	{
 		gblQPCTimer.CounterExceedToCheck();
 	}
-	_outp( rwBase, wNibblesToWrite );
+	__outbyte( rwBase, (BYTE) wNibblesToWrite );
 
 	// When the peripheral responds by setting S6=0, set D3=1.
 	gblQPCTimer.ResetCounter();
@@ -637,7 +637,7 @@ void CNibbleModeProto::WriteByteToPort( BYTE bByteToWrite ) const
 	{
 		gblQPCTimer.CounterExceedToCheck();
 	}
-	_outp( rwBase, (wNibblesToWrite >> 8) | oSTROBE_VAL );
+	__outbyte( rwBase, (wNibblesToWrite >> 8) | oSTROBE_VAL );
 
 	//***JHC* Wait the peripheral responds by setting S6=1. *JHC***
 	//NOTICE: experimental result...

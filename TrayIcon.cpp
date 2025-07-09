@@ -5,7 +5,7 @@
 
 IMPLEMENT_DYNAMIC( CTrayIcon, CObject )
 
-CTrayIcon::CTrayIcon(HWND hWnd, UINT uIconID, HICON hIcon, LPCSTR lpToolTip, MouseMsgHandlerPtr *pMouseMsgHandler, int nHandlers)
+CTrayIcon::CTrayIcon(HWND hWnd, UINT uIconID, HICON hIcon, LPCTSTR lpToolTip, MouseMsgHandlerPtr *pMouseMsgHandler, int nHandlers)
 {
 	m_bMinimizedToTray = FALSE;
 
@@ -22,7 +22,7 @@ CTrayIcon::~CTrayIcon()
 	delete m_pMouseMsgHandler;
 }
 
-void CTrayIcon::SetTrayIcon(HWND hWnd, UINT uIconID, HICON hIcon, LPCSTR lpToolTip)
+void CTrayIcon::SetTrayIcon(HWND hWnd, UINT uIconID, HICON hIcon, LPCTSTR lpToolTip)
 {
 	m_hWnd = hWnd;
 	m_uIconID = uIconID;
@@ -84,7 +84,7 @@ void CTrayIcon::HideWindow(HICON hIcon /* = NULL */)
 	}
 }
 
-BOOL CTrayIcon::AddIcon(HICON hIcon)
+BOOL CTrayIcon::AddIcon(HICON hIcon) const
 {
 	NOTIFYICONDATA tnid; 
 
@@ -95,14 +95,14 @@ BOOL CTrayIcon::AddIcon(HICON hIcon)
 	tnid.uCallbackMessage = UWM_NOTIFY_ICON;
 	tnid.hIcon = hIcon ? hIcon : m_hIcon;
 	if( m_lpToolTip )
-		lstrcpyn(tnid.szTip, m_lpToolTip, sizeof(tnid.szTip));
+		(VOID) lstrcpyn(tnid.szTip, m_lpToolTip, _countof(tnid.szTip));
 	else
 		tnid.szTip[0] = '\0';
 
 	return Shell_NotifyIcon(NIM_ADD, &tnid);
 }
 
-BOOL CTrayIcon::DeleteIcon()
+BOOL CTrayIcon::DeleteIcon() const
 {
 	NOTIFYICONDATA tnid; 
 
@@ -113,7 +113,7 @@ BOOL CTrayIcon::DeleteIcon()
 	return Shell_NotifyIcon(NIM_DELETE, &tnid); 
 }
 
-BOOL CTrayIcon::ModifyIcon(HICON hIcon, LPCSTR lpToolTip /* = NULL */)
+BOOL CTrayIcon::ModifyIcon(HICON hIcon, LPCTSTR lpToolTip /* = NULL */)
 {
 #define SIZEOF_TNID_SZTIP	68			// Use the Windows 95 behavior. 
 
@@ -134,7 +134,7 @@ BOOL CTrayIcon::ModifyIcon(HICON hIcon, LPCSTR lpToolTip /* = NULL */)
 				CString sTemp2 = sTemp1.Left( 3 ) + "...";
 				sTemp1 = sTemp2 + sTemp1.Right( SIZEOF_TNID_SZTIP - 7 );
 			}
-			lstrcpyn( tnid.szTip, sTemp1, SIZEOF_TNID_SZTIP );
+			(VOID) lstrcpyn( tnid.szTip, sTemp1, SIZEOF_TNID_SZTIP );
 		}
 		return Shell_NotifyIcon( NIM_MODIFY, &tnid );
 	}

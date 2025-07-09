@@ -11,12 +11,9 @@
 
 #ifdef _DEBUG
 #undef THIS_FILE
-static char THIS_FILE[]=__FILE__;
+static const char * THIS_FILE = __FILE__;
 #define new DEBUG_NEW
 #endif
-
-// determine number of elements in an array (not bytes)
-#define _countof(array) (sizeof(array)/sizeof(array[0]))
 
 IMPLEMENT_DYNAMIC( CExcptClass, CException )
 IMPLEMENT_DYNAMIC( CCheckStatusException, CExcptClass )
@@ -73,7 +70,7 @@ void CInfoException::Handler() const
 		sTemp = "InfoError: file access is denied.\n";
 		break;
 	default:
-		sTemp.Format( "InfoError: erroneous status <%d> thrown!\n", m_nError );
+		sTemp.Format( L"InfoError: erroneous status <%d> thrown!\n", m_nError );
         break;
     }
 
@@ -120,7 +117,7 @@ void CTimer::SetTimer( CLOCK_T interval, LPCSTR msghdr /* = NULL */)
 	m_fEnabled = TRUE;					// turn on the timer
 	m_fTimeout = FALSE;
 	m_dwInterval = interval;
-	m_dwStart = GetTickCount();			// start to tick the timer
+	m_dwStart = (CLOCK_T)GetTickCount64();		// start to tick the timer
 }
 
 BOOL CTimer::CheckTimeout( BOOL fThrow /* = TRUE */)
@@ -131,7 +128,7 @@ BOOL CTimer::CheckTimeout( BOOL fThrow /* = TRUE */)
 	{
 		if( m_fTimeout == FALSE )		// not timeout yet
 		{
-			CLOCK_T dwElapsed = (CLOCK_T)GetTickCount() - m_dwStart;
+			CLOCK_T dwElapsed = (CLOCK_T)GetTickCount64() - m_dwStart;
 			if( dwElapsed >= m_dwInterval )	// timeout to alarm!
 			{
 				m_fTimeout = TRUE;
@@ -212,7 +209,7 @@ void QPCTimer::CheckTimeout() const
 	if( (GetQPCTime() - m_i64Start) > m_i64Interval )
 	{
 		TRACE( "Error: Timeout in block transfer.\n" );
-		THROW( new CTimerException( ":( Timeout occurred in block transfer.\r\n" ) );
+		THROW( new CTimerException( L":( Timeout occurred in block transfer.\r\n" ) );
 	}
 }
 
@@ -223,7 +220,7 @@ CExceptDlg::CExceptDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(CExceptDlg::IDD, pParent)
 {
 	//{{AFX_DATA_INIT(CExceptDlg)
-	m_sExceptEdit = _T("");
+	m_sExceptEdit = L"";
 	//}}AFX_DATA_INIT
 }
 
@@ -244,7 +241,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CExceptDlg message handlers
 
-void CExceptDlg::AddStringToEdit( LPCSTR s )
+void CExceptDlg::AddStringToEdit( LPCTSTR s )
 {
 	if( m_sExceptEdit.GetLength() > 2000 )
 	{

@@ -75,7 +75,7 @@ public:
 	CBArchive& operator-=( const int nOffset );
 
 protected:
-	void ReadBObject( CBObject* pBOb );
+	void ReadBObject(CBObject* pBOb) {};
 	void WriteBObject( const CBObject* pBOb );
 	void RecordPosition() { m_fpOrig = m_fpBufCur; }
 	void RestorePosition() { m_fpBufCur = m_fpOrig; }
@@ -103,7 +103,7 @@ class CFileInfo : public CBObject
 	friend CDCGuest; friend CDCServer;
 
 public:
-	CFileInfo() { m_size = 0; }
+	CFileInfo() { m_size = 0; m_attribute = 0; }
 	BOOL IsEqual( const CFileInfo& other ) const;
 	BOOL operator==( const CFileInfo& other ) const;
 	BOOL operator!=( const CFileInfo& other ) const;
@@ -133,7 +133,7 @@ public:
 
 
 inline CTimeDos::CTimeDos()
-	{ }
+	{ m_wDate = 0; }
 inline CTimeDos::CTimeDos( const CTimeDos& timeSrc )
 	{ m_time = timeSrc.m_time; }
 inline CTimeDos::CTimeDos( WORD date, WORD time )

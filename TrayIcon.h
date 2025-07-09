@@ -1,11 +1,11 @@
 #if !defined(_TRAYICON_H_)
 #define _TRAYICON_H_
 
-#define UWM_NOTIFY_ICON_MSG	_T("UWM_NOTIFY_ICON-{5DC84998-8E67-4369-B279-F77AB0B099B2}")
+#define UWM_NOTIFY_ICON_MSG	L"UWM_NOTIFY_ICON-{5DC84998-8E67-4369-B279-F77AB0B099B2}"
 
 const UINT UWM_NOTIFY_ICON = ::RegisterWindowMessage( UWM_NOTIFY_ICON_MSG );
 
-const UINT UWM_TASKBAR_CREATED = ::RegisterWindowMessage( _T("TaskbarCreated") );
+const UINT UWM_TASKBAR_CREATED = ::RegisterWindowMessage( L"TaskbarCreated" );
 
 class CTrayIconMouseMsgHandler;
 
@@ -15,26 +15,26 @@ class CTrayIcon : public CObject
 {
 	DECLARE_DYNAMIC( CTrayIcon )
 public:
-	CTrayIcon(HWND hWnd, UINT uIconID, HICON hIcon, LPCSTR lpToolTip, MouseMsgHandlerPtr *pMouseMsgHandler, int nHandlers);
+	CTrayIcon(HWND hWnd, UINT uIconID, HICON hIcon, LPCTSTR lpToolTip, MouseMsgHandlerPtr *pMouseMsgHandler, int nHandlers);
 	CTrayIcon() { m_bMinimizedToTray = FALSE; };
 	~CTrayIcon();
-	void SetTrayIcon(HWND hWnd, UINT uIconID, HICON hIcon, LPCSTR lpToolTip);
+	void SetTrayIcon(HWND hWnd, UINT uIconID, HICON hIcon, LPCTSTR lpToolTip);
 	void SetMouseMsgHandler(MouseMsgHandlerPtr *pMouseMsgHandler, int nHandlers);
 	void HideWindow(HICON hIcon = NULL);
 	void RestoreWindow();
 	void MinimizeWndToTray(HWND hWnd);
 	void RestoreWndFromTray(HWND hWnd);
-	CWnd* FromHandle() { return CWnd::FromHandle(m_hWnd); }
-	BOOL AddIcon(HICON hIcon);
-	BOOL DeleteIcon();
-	BOOL ModifyIcon(HICON hIcon, LPCSTR lpToolTip = NULL);
+	CWnd* FromHandle() const { return CWnd::FromHandle(m_hWnd); }
+	BOOL AddIcon(HICON hIcon) const;
+	BOOL DeleteIcon() const;
+	BOOL ModifyIcon(HICON hIcon, LPCTSTR lpToolTip = NULL);
 	afx_msg LRESULT OnTaskBarCreated(WPARAM wParam, LPARAM lParam);
 	afx_msg void OnNotifyIcon(WPARAM wParam, LPARAM lParam);	
 private:
 	HWND m_hWnd;
 	UINT m_uIconID;
 	HICON m_hIcon;
-	LPCSTR m_lpToolTip;
+	LPCTSTR m_lpToolTip;
 	MouseMsgHandlerPtr *m_pMouseMsgHandler;
 	int m_nHandlers;
 	BOOL m_bMinimizedToTray;
@@ -43,8 +43,8 @@ private:
 class CTrayIconMouseMsgHandler : public CObject
 {
 public:
-	CTrayIconMouseMsgHandler(UINT uMouseMsgID = WM_LBUTTONDBLCLK) { m_uMouseMsgID = uMouseMsgID; }
-	UINT GetMouseMsgID() { return m_uMouseMsgID; } const
+	CTrayIconMouseMsgHandler(UINT uMouseMsgID = WM_LBUTTONDBLCLK) : m_pTrayIcon(nullptr) { m_uMouseMsgID = uMouseMsgID; }
+	UINT GetMouseMsgID() const { return m_uMouseMsgID; }
 	void SetMouseMsgID(UINT uMouseMsgID) { m_uMouseMsgID = uMouseMsgID; }
 	void SetTrayIcon(CTrayIcon* pTrayIcon) { m_pTrayIcon = pTrayIcon; }
 	virtual void MouseMsgHandler() = 0;

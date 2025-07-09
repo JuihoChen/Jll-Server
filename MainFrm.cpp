@@ -12,7 +12,7 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
+static const char * THIS_FILE = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
@@ -57,7 +57,7 @@ static UINT indicators[] =
 CMainFrame::CMainFrame()
 {
 	// TODO: add member initialization code here
-	_OutputDebugString( "CMainFrame constructor...\n" );
+	_OutputDebugString( L"CMainFrame constructor...\n" );
 
 	m_pTheServer = 0;
 	m_nTimerDetectGuest = 0;
@@ -65,7 +65,7 @@ CMainFrame::CMainFrame()
 
 CMainFrame::~CMainFrame()
 {
-	_OutputDebugString( "CMainFrame::Destructor called.\n" );
+	_OutputDebugString( L"CMainFrame::Destructor called.\n" );
 }
 
 void CMainFrame::FormatOutput( LPCTSTR lpszFormat, ... )
@@ -83,7 +83,7 @@ void CMainFrame::FormatOutput( LPCTSTR lpszFormat, ... )
 
 int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
-	_OutputDebugString( "Main frame>OnCreate.\n" );
+	_OutputDebugString( L"Main frame>OnCreate.\n" );
 
 	if (CFrameWnd::OnCreate(lpCreateStruct) == -1)
 		return -1;
@@ -93,7 +93,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		!m_wndToolBar.LoadBitmap(IDR_MAINFRAME))
 		////!m_wndToolBar.LoadToolBar(IDR_MAINFRAME))
 	{
-		TRACE0("Failed to create toolbar\n");
+		TRACE0( "Failed to create toolbar\n" );
 		return -1;      // fail to create
 	}
 
@@ -119,7 +119,7 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	nIndex = m_wndStatusBar.CommandToIndex( ID_PERCENT_DONE );
 	m_wndStatusBar.GetPaneInfo( nIndex, nID, nStyle, cxWidth );
 	m_wndStatusBar.SetPaneInfo( nIndex, nID, nStyle, cxWidth * 5 );
-	///m_cProgressBar.Create( _T("100%"), 100, 100, TRUE, nIndex );
+	///m_cProgressBar.Create( L"100%", 100, 100, TRUE, nIndex );
 
 	// Prepare data to system tray.
 	SetupTrayIcon();
@@ -158,7 +158,7 @@ void CMainFrame::SetupTrayIcon()
 
 BOOL CMainFrame::PreCreateWindow(CREATESTRUCT& cs)
 {
-	_OutputDebugString( "Main frame>PreCreateWindow.\n" );
+	_OutputDebugString( L"Main frame>PreCreateWindow.\n" );
 
 	if( !CFrameWnd::PreCreateWindow(cs) )
 		return FALSE;
@@ -222,7 +222,7 @@ void CMainFrame::OnUpdatePercentDone(CCmdUI* pCmdUI)
 	pCmdUI->Enable();
 }
 
-void CMainFrame::OnTimer(UINT nIDEvent) 
+void CMainFrame::OnTimer(UINT_PTR nIDEvent)
 {
 	// TODO: Add your message handler code here and/or call default
 	switch( nIDEvent )
@@ -245,7 +245,7 @@ void CMainFrame::OnTimer(UINT nIDEvent)
 		else
 		{
 			StopTimer( nTimerIdDetectGuest );
-	 		FormatOutput( "the Guest is detected... %s",
+	 		FormatOutput( L"the Guest is detected... %s",
 				CTime::GetCurrentTime().Format( "at %H:%M:%S on %A, %B %d, %Y" ) );
 			GetActiveView()->EnableFolderChange( FALSE );
 			m_pTheServer->Begin( this );
@@ -258,9 +258,9 @@ void CMainFrame::OnTimer(UINT nIDEvent)
 	CFrameWnd::OnTimer(nIDEvent);
 }
 
-UINT CMainFrame::StartTimer(UINT nIDEvent)
+UINT_PTR CMainFrame::StartTimer(UINT nIDEvent)
 {
-	UINT nTimer = 0;
+	UINT_PTR nTimer = 0;
 
 	switch( nIDEvent )
 	{
@@ -328,7 +328,7 @@ LRESULT CMainFrame::OnExceptionBox( WPARAM wParam, LPARAM lParam )
 
 LRESULT CMainFrame::OnServerEndJob( WPARAM wParam, LPARAM lParam )
 {
-	FormatOutput( "the Guest is disconnected... %s", CTime::GetCurrentTime().Format( "at %H:%M:%S" ) );
+	FormatOutput( L"the Guest is disconnected... %s", CTime::GetCurrentTime().Format( "at %H:%M:%S" ) );
 	GetActiveView()->EnableFolderChange( TRUE );
 	theApp.m_drvPortTalk.ParFreePort();	// free parallel port from Parport.sys
 ///v0.18***	StartTimer( nTimerIdDetectGuest );
@@ -347,11 +347,11 @@ LRESULT CMainFrame::OnAddString( WPARAM wParam, LPARAM lParam )
 LRESULT CMainFrame::OnCopyProgress( WPARAM wParam, LPARAM lParam )
 {
 	static DWORD dwFileSize = 0;
-	UINT nPercentDone = 100;
+	UINT_PTR nPercentDone = 100;
 
 	if( wParam == 0 )
 	{
-		dwFileSize = lParam;
+		dwFileSize = static_cast<DWORD>(lParam);
 		nPercentDone = 0;
 	}
 	else if( dwFileSize > (DWORD) lParam )
@@ -360,15 +360,15 @@ LRESULT CMainFrame::OnCopyProgress( WPARAM wParam, LPARAM lParam )
 	}
 
 	CString strPercentDone;
-	strPercentDone.Format( "%i%%", nPercentDone );
+	strPercentDone.Format( L"%Iu%%", nPercentDone );
 	//m_wndStatusBar.SetPaneText( m_wndStatusBar.CommandToIndex( ID_PERCENT_DONE ), strPercentDone );
 	//m_wndStatusBar.UpdateWindow();
 	if( !IsWindow( m_cProgressBar.GetSafeHwnd() ) )
 	{
-		m_cProgressBar.Create( _T("100%"), 100, 100, TRUE, m_wndStatusBar.CommandToIndex( ID_PERCENT_DONE ) );
+		m_cProgressBar.Create( L"100%", 100, 100, TRUE, m_wndStatusBar.CommandToIndex( ID_PERCENT_DONE ) );
 	}
 	m_cProgressBar.SetText( strPercentDone );
-	m_cProgressBar.SetPos( nPercentDone );
+	m_cProgressBar.SetPos( static_cast<int>(nPercentDone) );
 
 	return 0;
 }
@@ -383,7 +383,7 @@ LRESULT CMainFrame::OnAreYouMe( WPARAM, LPARAM )
 void CMainFrame::OnClose()
 {
 	// TODO: Add your message handler code here and/or call default
-	_OutputDebugString( "Main frame>OnClose Begins.\n" );
+	_OutputDebugString( L"Main frame>OnClose Begins.\n" );
 	
 	if( m_pTheServer->IsRunning() )
 	{
@@ -396,7 +396,7 @@ void CMainFrame::OnClose()
 	}
 
 	CFrameWnd::OnClose();
-	_OutputDebugString( "Main frame>OnClose Ends.\n" );
+	_OutputDebugString( L"Main frame>OnClose Ends.\n" );
 }
 
 void CMainFrame::OnDetectSpkOn(UINT nID) 
@@ -438,7 +438,7 @@ void CMainFrame::OnSysCommand(UINT nID, LPARAM lParam)
 	// operator to obtain the correct result.
 	if( (nID & 0xFFF0) == SC_MINIMIZE )
 	{
-		_OutputDebugString( "Main frame>SysCommand to Minimize.\n" );
+		_OutputDebugString( L"Main frame>SysCommand to Minimize.\n" );
 
 		HICON hIcon = m_pTheServer->IsRunning() ? m_hIconConnected : m_hIconDisconnect;
 		m_cTrayIcon.HideWindow( hIcon );
@@ -449,14 +449,17 @@ void CMainFrame::OnSysCommand(UINT nID, LPARAM lParam)
 
 LRESULT CMainFrame::OnTaskBarCreated(WPARAM wParam, LPARAM lParam)
 {
-	_OutputDebugString( "Main frame>OnTaskBarCreated.\n" );
+	_OutputDebugString( L"Main frame>OnTaskBarCreated.\n" );
 
 	return m_cTrayIcon.OnTaskBarCreated( wParam, lParam );
 }
 
-void CMainFrame::OnNotifyIcon(WPARAM wParam, LPARAM lParam) 
+LRESULT CMainFrame::OnNotifyIcon(WPARAM wParam, LPARAM lParam)
 {
 	m_cTrayIcon.OnNotifyIcon( wParam, lParam );
+	// After the call, return a standard LRESULT.
+	// For most custom message handlers, 0 signifies that the message was processed.
+	return 0;
 }
 
 void CMainFrame::OnTaskbarMenuShow() 
@@ -479,7 +482,7 @@ void CMainFrame::OnUpdateEditDisablewarmpoll(CCmdUI* pCmdUI)
 
 		res = RegQueryValueEx(
 				phkResult,					// handle to key to query
-				"DisableWarmPoll",			// address of name of value to query
+				L"DisableWarmPoll",			// address of name of value to query
 				NULL,						// reserved
 				&myType,					// address of buffer for value type
 				(LPBYTE)&myData,			// address of data buffer

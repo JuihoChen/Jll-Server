@@ -10,7 +10,7 @@
 
 #ifdef _DEBUG
 #undef THIS_FILE
-static char THIS_FILE[]=__FILE__;
+static const char * THIS_FILE = __FILE__;
 #define new DEBUG_NEW
 #endif
 
@@ -35,28 +35,28 @@ WORD CNibbleModeProto::ReadByteFromPortInByte()
 
 	// When S6=0, set D3=0.
 	gblQPCTimer.ResetCounter();
-	while( (_inp( rwBase + 1 ) & iBUSY_VAL) == 0x0 )
+	while( (__inbyte( rwBase + 1 ) & iBUSY_VAL) == 0x0 )
 	{
 		gblQPCTimer.CounterExceedToCheck();
 	}
 	/// *!*
 	/// *!* Cannot assure if status/control could be read in a word?
 	/// *!*
-	WORD wLData = _inpw( rwBase + 1 );	// BYTE bHighNibble = _inp( rwBase+2 );
+	WORD wLData = __inword( rwBase + 1 );	// BYTE bHighNibble = _inp( rwBase+2 );
 										// BYTE bLowNibble = _inp( rwBase+1 );
-	_outp( rwBase, 0 );
+	__outbyte( rwBase, 0 );
 
 	// When the peripheral responds by setting S6=1, set D3=1.
 	// LowNibble holds 4 bits of data.
 	gblQPCTimer.ResetCounter();
-	while( (_inp( rwBase + 1 ) & iBUSY_VAL) != 0x0 )
+	while( (__inbyte( rwBase + 1 ) & iBUSY_VAL) != 0x0 )
 	{
 		gblQPCTimer.CounterExceedToCheck();
 	}
-	WORD wHData = _inpw( rwBase + 1 );
-	_outp( rwBase, oSTROBE_VAL );
+	WORD wHData = __inword( rwBase + 1 );
+	__outbyte( rwBase, oSTROBE_VAL );
 
-#if 0
+#if 1
 	return (((BYTE)(((wHData & 0xff00) + (((BYTE)(wHData << 1)) & 0xff)) >> 4)) << 8)
 		+ (BYTE)(((wLData & 0xff00) + (((BYTE)(wLData << 1)) & 0xff)) >> 4);
 #else
@@ -112,29 +112,29 @@ void CNibbleModeProto::WriteByteToPortInByte( WORD wWordToWrite ) const
 
 	// When S6=1 (not busy), write the low nibble and set D3=0.
 	gblQPCTimer.ResetCounter();
-	while( (_inp( rwBase + 1 ) & iBUSY_VAL) != 0x0 )
+	while( (__inbyte( rwBase + 1 ) & iBUSY_VAL) != 0x0 )
 	{
 		gblQPCTimer.CounterExceedToCheck();
 	}
 	BYTE bByteToWrite = (BYTE) wWordToWrite;
-	_outp( rwBase + 2, bByteToWrite >> 4 );		// High Nibble
-	_outp( rwBase, bByteToWrite & 0xf );		// Low Nibble
+	__outbyte( rwBase + 2, bByteToWrite >> 4 );		// High Nibble
+	__outbyte( rwBase, bByteToWrite & 0xf );		// Low Nibble
 
 	// When the peripheral responds by setting S6=0, set D3=1.
 	gblQPCTimer.ResetCounter();
-	while( (_inp( rwBase + 1 ) & iBUSY_VAL) == 0x0 )
+	while( (__inbyte( rwBase + 1 ) & iBUSY_VAL) == 0x0 )
 	{
 		gblQPCTimer.CounterExceedToCheck();
 	}
 	bByteToWrite = (BYTE) (wWordToWrite >> 8);
-	_outp( rwBase + 2, bByteToWrite >> 4 );		// High Nibble
-	_outp( rwBase, (bByteToWrite & 0xf) | oSTROBE_VAL );
+	__outbyte( rwBase + 2, bByteToWrite >> 4 );		// High Nibble
+	__outbyte( rwBase, (bByteToWrite & 0xf) | oSTROBE_VAL );
 
 	//***JHC* Wait the peripheral responds by setting S6=1. *JHC***
 	//NOTICE: experimental result...
 	//   In transients between CDB & Status nibble in command phase,
 	//   a polling for not being busy is necessary as below.
-	while( ((CNibbleModeProto*)this)->CheckForPolling() && (_inp( rwBase + 1 ) & iBUSY_VAL) != 0x0 )
+	while( ((CNibbleModeProto*)this)->CheckForPolling() && (__inbyte( rwBase + 1 ) & iBUSY_VAL) != 0x0 )
 		;
 
 #else //WWW

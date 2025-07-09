@@ -13,7 +13,7 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
+static const char * THIS_FILE = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
@@ -28,7 +28,7 @@ CJllServerView::CJllServerView()
 	//}}AFX_DATA_INIT
 
 	// TODO: add construction code here
-	_OutputDebugString( "View constructor...\n" );
+	_OutputDebugString( L"View constructor...\n" );
 
 	m_cButtonResetDir.SetIcons( IDI_ICON_RESET_DIR_U, IDI_ICON_RESET_DIR_D, IDI_ICON_RESET_DIR_F, IDI_ICON_RESET_DIR_X );
 	m_cButtonSetDir.LoadBitmaps( IDB_BITMAP_SET_DIR_U, IDB_BITMAP_SET_DIR_D, IDB_BITMAP_SET_DIR_F, IDB_BITMAP_SET_DIR_X );
@@ -38,7 +38,7 @@ CJllServerView::CJllServerView()
 
 void CJllServerView::OnDestroy() 
 {
-	_OutputDebugString( "CJllServerView::OnDestroy\n" );
+	_OutputDebugString( L"CJllServerView::OnDestroy\n" );
 	CFormView::OnDestroy();
 	
 	// TODO: Add your message handler code here
@@ -47,7 +47,7 @@ void CJllServerView::OnDestroy()
 
 CJllServerView::~CJllServerView()
 {
-	_OutputDebugString( "View destructor...\n" );
+	_OutputDebugString( L"View destructor...\n" );
 }
 
 void CJllServerView::DoDataExchange(CDataExchange* pDX)
@@ -61,7 +61,7 @@ void CJllServerView::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_BUTTON_FOR_DIR, m_cButtonForDir);
 	//}}AFX_DATA_MAP
 
-	_OutputDebugString( "View::DoDataExchange called.\n" );
+	_OutputDebugString( L"View::DoDataExchange called.\n" );
 }
 
 
@@ -115,8 +115,8 @@ INT CALLBACK CJllServerView::BrowseCallbackProc(HWND hwnd,UINT uMsg,LPARAM lp,LP
 			::SendMessage( hwnd, BFFM_SETSELECTION, TRUE, (LPARAM)szDir );
 		}
 #else
-		::SendMessage( hwnd, BFFM_SETSELECTION, TRUE,
-			(LPARAM)(LPCSTR) GetMyMainFrame()->GetActiveView()->m_cStartingFolder.GetCurText() );
+        ::SendMessage( hwnd, BFFM_SETSELECTION, TRUE,  
+			(LPARAM)(LPCTSTR)GetMyMainFrame()->GetActiveView()->m_cStartingFolder.GetCurText());
 #endif
 		break;
 
@@ -134,7 +134,7 @@ INT CALLBACK CJllServerView::BrowseCallbackProc(HWND hwnd,UINT uMsg,LPARAM lp,LP
 
 void CJllServerView::OnButtonForDir()
 {
-	_OutputDebugString( "View::Button for Dir. called.\n" );
+	_OutputDebugString( L"View::Button for Dir. called.\n" );
 
 	// Disable timer for detecting the guest temporarily.
 	CMainFrame* pFrame = (CMainFrame*)GetParent();
@@ -151,7 +151,7 @@ void CJllServerView::OnButtonForDir()
 		ZeroMemory( &bi, sizeof bi );
 		bi.hwndOwner = GetSafeHwnd();
 		bi.pszDisplayName = 0;
-		bi.lpszTitle = "Select path:";
+		bi.lpszTitle = L"Select path:";
 		bi.pidlRoot = 0;
 		bi.ulFlags = BIF_RETURNONLYFSDIRS;// | BIF_STATUSTEXT;
 		bi.lpfn = CJllServerView::BrowseCallbackProc;
@@ -162,7 +162,7 @@ void CJllServerView::OnButtonForDir()
 			{
 				if( m_cStartingFolder.SetCurText( szDir ) )
 				{
-					GetDocument()->FormatOutput( "Starting Folder is changed." );
+					GetDocument()->FormatOutput( L"Starting Folder is changed." );
 				}
 				UpdateData( FALSE );
 				// Update directory name in CDCServer class anyway.
@@ -181,7 +181,7 @@ void CJllServerView::OnButtonForDir()
 
 void CJllServerView::OnSelchangeComboForDir() 
 {
-	_OutputDebugString( "View::OnSelchangeComboForDir called.\n" );
+	_OutputDebugString( L"View::OnSelchangeComboForDir called.\n" );
 
 	// Disable timer for detecting the guest temporarily.
 	CMainFrame* pFrame = GetMyMainFrame();
@@ -189,7 +189,7 @@ void CJllServerView::OnSelchangeComboForDir()
 
 	if( m_cStartingFolder.SetCurText( m_cStartingFolder.GetCurText() ) )
 	{
-		GetDocument()->FormatOutput( "Starting Folder is changed." );
+		GetDocument()->FormatOutput( L"Starting Folder is changed." );
 	}
 
 	ASSERT_KINDOF( CDCServer, pFrame->m_pTheServer );
@@ -202,7 +202,7 @@ void CJllServerView::OnButtonResetDir()
 	CMainFrame* pFrame = GetMyMainFrame();
 	pFrame->StopTimer( CMainFrame::nTimerIdDetectGuest );
 
-	GetDocument()->FormatOutput( "Transferring directory is restored to the Starting Folder." );
+	GetDocument()->FormatOutput( L"Transferring directory is restored to the Starting Folder." );
 
 	ASSERT_KINDOF( CDCServer, pFrame->m_pTheServer );
 	pFrame->m_pTheServer->ParseWorkDir( m_cStartingFolder.GetCurText() );
@@ -214,11 +214,11 @@ void CJllServerView::OnButtonSetDir()
 	CMainFrame* pFrame = GetMyMainFrame();
 	pFrame->StopTimer( CMainFrame::nTimerIdDetectGuest );
 
-	GetDocument()->FormatOutput( "Starting Folder is set to the Transferring directory." );
+	GetDocument()->FormatOutput( L"Starting Folder is set to the Transferring directory." );
 
 	// restore the working folder to a LongPathName.
-	char szLong[_MAX_PATH];
-	::GetLongPathName( pFrame->m_pTheServer->GetWorkDir(), szLong, sizeof szLong );
+	wchar_t szLong[_MAX_PATH];
+	::GetLongPathName( pFrame->m_pTheServer->GetWorkDir(), szLong, _countof(szLong) );
 
 	m_cStartingFolder.SetCurText( szLong );
 	UpdateData( FALSE );
@@ -232,8 +232,8 @@ void CJllServerView::EnableFolderChange(BOOL bEnable /* = TRUE */)
 		m_cStartingFolder.EnableWindow( TRUE );
 
 		// restore the working folder to a LongPathName.
-		char szLong[_MAX_PATH];
-		::GetLongPathName( GetMyMainFrame()->m_pTheServer->GetWorkDir(), szLong, sizeof szLong );
+		wchar_t szLong[_MAX_PATH];
+		::GetLongPathName( GetMyMainFrame()->m_pTheServer->GetWorkDir(), szLong, _countof(szLong) );
 
 		if( m_cStartingFolder.GetCurText().CompareNoCase( szLong ) )
 		{
@@ -287,7 +287,7 @@ void CJllServerView::OnDraw(CDC* pDC)
 
 void CJllServerView::InvalidateForNewLine()
 {
-	int nLines = GetDocument()->m_slMessages.GetCount();
+	UINT_PTR nLines = GetDocument()->m_slMessages.GetCount();
 
 	CRect rect;
 	GetClientRect( &rect );
@@ -296,7 +296,7 @@ void CJllServerView::InvalidateForNewLine()
 		rect.left,
 		0, //m_nTopForText,
 		rect.right,
-		m_nTopForText + nLines * m_nLineHeight
+		static_cast<int>(m_nTopForText + nLines * m_nLineHeight)
 	);
 
 	InvalidateRect( &rect );
@@ -307,7 +307,7 @@ void CJllServerView::InvalidateForNewLine()
 
 void CJllServerView::OnInitialUpdate() 
 {
-	_OutputDebugString( "View::OnInitialUpdate called.\n" );
+	_OutputDebugString( L"View::OnInitialUpdate called.\n" );
 
 	CFormView::OnInitialUpdate();		// this calls OnUpdate then
 	
@@ -377,7 +377,7 @@ void CJllServerView::OnInitialUpdate()
 void CJllServerView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
 {
 	// TODO: Add your specialized code here and/or call the base class
-	_OutputDebugString( "View::OnUpdate called.\n" );
+	_OutputDebugString( L"View::OnUpdate called.\n" );
 
 	// Call SetScrollSizes when the view is about to be updated. Call it in your
 	// override of the OnUpdate member function to adjust scrolling characteristics.
@@ -395,10 +395,10 @@ void CJllServerView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 
 BOOL CJllServerView::OnToolTipNotify(UINT id, NMHDR* pNMHDR, LRESULT* pResult )
 {
-	_OutputDebugString( "View::OnToolTipNotify called.\n" );
+	_OutputDebugString( L"View::OnToolTipNotify called.\n" );
 
 	TOOLTIPTEXT *pTTT = (TOOLTIPTEXT *)pNMHDR;
-	UINT nID = pNMHDR->idFrom;
+	UINT_PTR nID = pNMHDR->idFrom;
 	if( pTTT->uFlags & TTF_IDISHWND )
 	{
 		// idFrom is actually the HWND of the tool

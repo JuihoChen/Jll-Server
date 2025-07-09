@@ -18,10 +18,10 @@ public:
 // Constructors
 
     CMyFileDlg(BOOL bOpenFileDialog, // TRUE for FileOpen, FALSE for FileSaveAs
-               LPCSTR lpszDefExt = NULL,
-               LPCSTR lpszFileName = NULL,
+               LPCTSTR lpszDefExt = NULL,
+               LPCTSTR lpszFileName = NULL,
                DWORD dwFlags = OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
-               LPCSTR lpszFilter = NULL,
+               LPCTSTR lpszFilter = NULL,
                CWnd* pParentWnd = NULL);
                                           
 // Implementation

@@ -14,9 +14,9 @@
 #include "parallel.h"
 #include "barchive.h"
 
-#define  _ALLFILES		"*.*"
-#define  _PARENT_DIR	".."
-#define  _SELF_DIR		"."
+#define  _ALLFILES		L"*.*"
+#define  _PARENT_DIR	L".."
+#define  _SELF_DIR		L"."
 
 // *v0.24*  NTFS supports some file attributes that FATxx doesn't maintain. So these bits
 // have to be included to open files on disc. In the other hand, these bits have to be
@@ -34,8 +34,8 @@ class CDirectCable : public CObject
 	friend CBArchive;
 	friend CFileInfo;
 
-	typedef void (CDirectCable::*ptrSendFunc)( UINT nLen ) const;
-	typedef void (CDirectCable::*ptrRecvFunc)( UINT nIndex, UINT nLen );
+	typedef void (CDirectCable::*ptrSendFunc)( SIZE_T nLen ) const;
+	typedef void (CDirectCable::*ptrRecvFunc)( SIZE_T nIndex, SIZE_T nLen );
 
 	DECLARE_DYNAMIC( CDirectCable )
 public:
@@ -72,10 +72,10 @@ public:
 	CDirectCable( CNibbleModeProto& lpt );
 	virtual ~CDirectCable();
 protected:
-	void SendFromBuffer( UINT nLen ) const;
-	void ReceiveIntoBuffer( UINT nIndex, UINT nLen );
-	void SendFromBufferInByte( UINT nLen ) const;
-	void ReceiveIntoBufferInByte( UINT nIndex, UINT nLen );
+	void SendFromBuffer( SIZE_T nLen ) const;
+	void ReceiveIntoBuffer( SIZE_T nIndex, SIZE_T nLen );
+	void SendFromBufferInByte( SIZE_T nLen ) const;
+	void ReceiveIntoBufferInByte( SIZE_T nIndex, SIZE_T nLen );
 	void FillBuffer( UINT nIndex, BYTE* src, UINT nLen );
 	WORD GetWord( UINT nIndex ) const;
 	CString GetString( int nIndex, int nMaxLen ) const;
@@ -83,7 +83,7 @@ protected:
 	void SetString( UINT nIndex, CString& rString );
 	UINT Get_CRC_CheckSum( ULONG ulSize ) const;
 	static void DeleteBase( tmplTOCARRAY* pTocAr );
-	static CString ConcatDir( const CString& sDir, LPCSTR pzName ); 
+	static CString ConcatDir( const CString& sDir, LPCTSTR pzName ); 
 protected:
 	CNibbleModeProto& m_rNibbleModeDev;
 	ptrSendFunc m_pfnSendFromBuffer;
@@ -133,7 +133,7 @@ protected:
 	void RetCheckStatus( int nStatus );
 	void CreateTOC( WORD nAlloc, BOOL fResp = TRUE );
 	void AddIntoTOC( CBArchive& bar, WIN32_FIND_DATA* pFileData );
-	void FormatOutput( LPCTSTR lpszFormat, ... );
+	void FormatOutput( LPCTSTR lpszFormat, ... ) const;
 protected:
 	BYTE GetAt( int nIndex ) const;
 	WORD GetWord( int nIndex ) const;

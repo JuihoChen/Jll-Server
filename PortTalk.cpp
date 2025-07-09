@@ -11,7 +11,7 @@
 
 #ifdef _DEBUG
 #undef THIS_FILE
-static char THIS_FILE[]=__FILE__;
+static const char * THIS_FILE = __FILE__;
 #define new DEBUG_NEW
 #endif
 
@@ -41,7 +41,7 @@ int CPortTalk::OpenPortTalk()
 
 	// Open PortTalk Driver. If we cannot open it, try installing and starting it.
 	m_hPortTalk = CreateFile(
-		"\\\\.\\PortTalk",
+		L"\\\\.\\PortTalk",
 		GENERIC_READ,
 		0,									// exclusive access
 		NULL,
@@ -55,7 +55,7 @@ int CPortTalk::OpenPortTalk()
 		StartPortTalkDriver();
 		// Then try to open once more, before failing.
 		m_hPortTalk = CreateFile(
-			"\\\\.\\PortTalk",
+			L"\\\\.\\PortTalk",
 			GENERIC_READ,
 			0,
 			NULL,
@@ -275,7 +275,7 @@ void CPortTalk::StartPortTalkDriver() const
 	{
 		// Open a Handle to the PortTalk Service Database.
 		schService = OpenService( SchSCManager,			// handle to service control manager database
-								  "PortTalk",			// pointer to name of service to start
+								  L"PortTalk",			// pointer to name of service to start
 								  SERVICE_ALL_ACCESS );	// type of access to service
 
 		if( schService == NULL )
@@ -324,7 +324,7 @@ BOOL CPortTalk::InstallPortTalkDriver() const
 {
 	SC_HANDLE  SchSCManager;
 	SC_HANDLE  schService;
-	CHAR       DriverFileName[80];
+	WCHAR      DriverFileName[80];
 	CString    s;
 	BOOL       retv = TRUE;
 
@@ -354,14 +354,14 @@ BOOL CPortTalk::InstallPortTalkDriver() const
 	}
 
 	// Append our Driver Name.
-	lstrcat( DriverFileName, "\\Drivers\\PortTalk.sys" );
+	lstrcat( DriverFileName, L"\\Drivers\\PortTalk.sys" );
 	TRACE1( "PortTalk: Copying driver to %s\n", DriverFileName );
 
 	// Copy Driver to System32/drivers directory. This fails if the file doesn't exist.
 
-	if( !CopyFile( "PortTalk.sys", DriverFileName, FALSE ) )
+	if( !CopyFile( L"PortTalk.sys", DriverFileName, FALSE ) )
 	{
-		s.Format( "Failed to copy driver to %s\n\r", DriverFileName );
+		s.Format( L"Failed to copy driver to %s\n\r", DriverFileName );
 		s += "Please manually copy driver to your system32/driver directory.";
 		MessageBox( NULL, s, AfxGetAppName(), MB_ICONSTOP | MB_OK );
 		return FALSE;
@@ -376,13 +376,13 @@ BOOL CPortTalk::InstallPortTalkDriver() const
 	// HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services - It doesn't
 	// care if the driver exists, or if the path is correct.
 	schService = CreateService( SchSCManager,				// SCManager database
-								"PortTalk",					// name of service
-								"PortTalk",					// name to display
+								L"PortTalk",				// name of service
+								L"PortTalk",				// name to display
 								SERVICE_ALL_ACCESS,			// desired access
 								SERVICE_KERNEL_DRIVER,		// service type
 								SERVICE_DEMAND_START,		// start type
 								SERVICE_ERROR_NORMAL,		// error control type
-								"System32\\Drivers\\PortTalk.sys", // service's binary
+								L"System32\\Drivers\\PortTalk.sys", // service's binary
 								NULL,						// no load ordering group
 								NULL,						// no tag identifier
 								NULL,						// no dependencies

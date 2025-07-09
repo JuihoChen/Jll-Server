@@ -39,7 +39,7 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
+static const char * THIS_FILE = __FILE__;
 #endif
 
 IMPLEMENT_DYNCREATE(CProgressBar, CProgressCtrl)
@@ -171,7 +171,7 @@ COLORREF CProgressBar::SetBarColour(COLORREF clrBar)
 	if (!IsWindow(GetSafeHwnd()))
           return CLR_DEFAULT;
 
-	return SendMessage(PBM_SETBARCOLOR, 0, (LPARAM) clrBar);
+	return static_cast<COLORREF>(SendMessage(PBM_SETBARCOLOR, 0, (LPARAM)clrBar));
 #else
 	UNUSED(clrBar);
 	return CLR_DEFAULT;
@@ -184,7 +184,7 @@ COLORREF CProgressBar::SetBkColour(COLORREF clrBk)
 	if (!IsWindow(GetSafeHwnd()))
 		return CLR_DEFAULT;
 
-	return SendMessage(PBM_SETBKCOLOR, 0, (LPARAM) clrBk);
+	return static_cast<COLORREF>(SendMessage(PBM_SETBKCOLOR, 0, (LPARAM) clrBk));
 #else
 	UNUSED(clrBk);
 	return CLR_DEFAULT;
@@ -277,9 +277,9 @@ BOOL CProgressBar::Resize()
 	CClientDC dc(pStatusBar);
 	CFont *pOldFont = dc.SelectObject(pStatusBar->GetFont());
 	//v0.18*make fixed space*CSize size = dc.GetTextExtent(m_strMessage);		// Length of text
-	CSize size = dc.GetTextExtent(_T("100%"));			// Length of text
+	CSize size = dc.GetTextExtent(L"100%");			// Length of text
 	//v0.18*make fixed space*
-	int margin = dc.GetTextExtent(_T(" ")).cx * 2;		// Text margin
+	int margin = dc.GetTextExtent(L" ").cx * 2;		// Text margin
 	dc.SelectObject(pOldFont);
 
 	// Now calculate the rectangle in which we will draw the progress bar

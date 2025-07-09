@@ -7,7 +7,7 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
+static const char * THIS_FILE = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
@@ -33,7 +33,11 @@ END_MESSAGE_MAP()
 
 void CButtonStyle::DrawItem(LPDRAWITEMSTRUCT lpDIS) 
 {
-	ASSERT( lpDIS != NULL );
+	if( lpDIS == NULL )
+	{
+		ASSERT(FALSE);
+		return;
+	}
 	// must have at least the first icon loaded before calling DrawItem
 	ASSERT( m_hIcon1 != NULL );     // required
 

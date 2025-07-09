@@ -7,14 +7,14 @@
 
 #ifdef _DEBUG
 #undef THIS_FILE
-static char BASED_CODE THIS_FILE[] = __FILE__;
+static const char BASED_CODE * THIS_FILE = __FILE__;
 #endif
 
 CMyFileDlg::CMyFileDlg(BOOL bOpenFileDialog, // TRUE for FileOpen, FALSE for FileSaveAs
-        LPCSTR lpszDefExt,
-        LPCSTR lpszFileName,
+        LPCTSTR lpszDefExt,
+        LPCTSTR lpszFileName,
         DWORD dwFlags,
-        LPCSTR lpszFilter,
+        LPCTSTR lpszFilter,
         CWnd* pParentWnd) : CFileDialog(bOpenFileDialog, lpszDefExt, lpszFileName,
                                         dwFlags, lpszFilter, pParentWnd)
 {
@@ -52,7 +52,7 @@ BOOL CMyFileDlg::OnInitDialog()
 //there (like "Junk") so when the user hits OK, the dlg terminates.
 //Note that we'll deal with the "Junk" during return processing (see below)
 
-   SetDlgItemText(edt1, "Junk");
+   SetDlgItemText(edt1, L"Junk");
 
 //Now set the focus to the directories listbox.  Due to some painting
 //problems, we *must* also process the first WM_PAINT that comes through

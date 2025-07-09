@@ -83,7 +83,7 @@ class CTimer : CObject
 {
 public:
 	CTimer( CLOCK_T interval, LPCSTR msghdr = NULL ) { SetTimer( interval, msghdr ); }
-	CTimer() { m_fEnabled = FALSE; }
+	CTimer() : m_fEnabled(FALSE), m_fTimeout(FALSE), m_dwInterval(0), m_dwStart(0) {}
 	void SetTimer( CLOCK_T interval, LPCSTR msghdr = NULL );
 	void SetMsghdr( LPCSTR msghdr ) { m_strException = msghdr; }
 	BOOL CheckTimeout( BOOL fThrow = TRUE );
@@ -135,7 +135,7 @@ class CExceptDlg : public CDialog
 // Construction
 public:
 	CExceptDlg(CWnd* pParent = NULL);   // standard constructor
-	void AddStringToEdit( LPCSTR s );
+	void AddStringToEdit( LPCTSTR s );
 
 // Dialog Data
 	//{{AFX_DATA(CExceptDlg)

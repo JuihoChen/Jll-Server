@@ -50,10 +50,12 @@
 #include "parallel.h"
 #include "direct.h"
 
+#include <VersionHelpers.h>
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
+static const char * THIS_FILE = __FILE__;
 #endif
 
 /////////////////////////////////////////////////////////////////////////////
@@ -84,7 +86,7 @@ CJllServerApp::CJllServerApp()
 {
 	// TODO: add construction code here,
 	// Place all significant initialization in InitInstance
-	_OutputDebugString( "We start here...\n" );
+	_OutputDebugString( L"We start here...\n" );
 }
 
 #define SMTO_NOTIMEOUTIFNOTHUNG 0x0008
@@ -93,7 +95,7 @@ CJllServerApp::CJllServerApp()
 // Some coded copied from articles of The Code Project
 BOOL CALLBACK CJllServerApp::Searcher( HWND hWnd, LPARAM lParam )
 {
-	DWORD result;
+	DWORD_PTR result;
 	LRESULT ok = ::SendMessageTimeout(
 		hWnd,
 		UWM_ARE_YOU_ME,
@@ -134,7 +136,7 @@ BOOL CJllServerApp::AvoidMultipleInstances() const
 
 			if( !::IsWindowVisible( hOther ) )
 			{ /* restore from system tray */
-				DWORD result;
+				DWORD_PTR result;
 				LRESULT ok = ::SendMessageTimeout(
 					hOther,
 					UWM_NOTIFY_ICON,
@@ -169,12 +171,12 @@ BOOL CJllServerApp::InitInstance()
 {
     CString s;
 
-	// Check only running on WinXP/NT systems.
-	if( GetVersion() & 0x80000000 )
+	// Check only running on Windows systems.
+	if( !IsWindowsVersionOrGreater(10, 0, 0) )
 	{
-		s = "This application is only allowed to be running on Windows XP or NT.";
-		MessageBox( NULL, s, AfxGetAppName(), MB_ICONSTOP | MB_OK );
-		return FALSE; // and fail
+		s = L"This application requires Windows 10 or later.";
+		MessageBox(NULL, s, AfxGetAppName(), MB_ICONSTOP | MB_OK);
+		return FALSE;
 	}
 
 	// Only one instance is allowed to be running.
@@ -212,21 +214,10 @@ BOOL CJllServerApp::InitInstance()
 
 	AfxEnableControlContainer();
 
-	// Standard initialization
-	// If you are not using these features and wish to reduce the size
-	//  of your final executable, you should remove from the following
-	//  the specific initialization routines you do not need.
-
-#ifdef _AFXDLL
-	Enable3dControls();			// Call this when using MFC in a shared DLL
-#else
-	Enable3dControlsStatic();	// Call this when linking to MFC statically
-#endif
-
 	// Change the registry key under which our settings are stored.
 	// TODO: You should modify this string to be something appropriate
 	// such as the name of your company or organization.
-	SetRegistryKey(_T("Application for Laplink-like Server"));
+	SetRegistryKey( L"Application for Laplink-like Server" );
 
 	LoadStdProfileSettings();  // Load standard INI file options (including MRU)
 
@@ -252,17 +243,17 @@ BOOL CJllServerApp::InitInstance()
 	if (!ProcessShellCommand(cmdInfo))
 		return FALSE;
 
-	_OutputDebugString( "CJllServerApp>Before MainWnd's Show.\n" );
+	_OutputDebugString( L"CJllServerApp>Before MainWnd's Show.\n" );
 
 	if( m_drvPortTalk.EnableIOPM( m_lptNibble.GetBaseAddr() ) != CPortTalk::Success )
 	{
-		s = "Error in IPOM setting for process.",
+		s = L"Error in IPOM setting for process.",
 		MessageBox( NULL, s, AfxGetAppName(), MB_ICONSTOP | MB_OK );
 		return FALSE;
 	}
 
 	((CMainFrame*)m_pMainWnd)->FormatOutput(
-		"Found a printer port on 0x%x in the registry.", m_lptNibble.GetBaseAddr() );
+		L"Found a printer port on 0x%x in the registry.", m_lptNibble.GetBaseAddr() );
 
 	// The one and only window has been initialized, so show and update it.
 	m_pMainWnd->ShowWindow(SW_SHOW);
@@ -276,7 +267,7 @@ BOOL CJllServerApp::InitInstance()
 	((CMainFrame*)m_pMainWnd)->m_pTheServer->ParseWorkDir( m_sStartingDir );
 ///v0.18***	((CMainFrame*)m_pMainWnd)->StartTimer( CMainFrame::nTimerIdDetectGuest );
 
-	_OutputDebugString( "CJllServerApp>Leave App's InitInstance.\n" );
+	_OutputDebugString( L"CJllServerApp>Leave App's InitInstance.\n" );
 	return TRUE;
 }
 
@@ -338,7 +329,7 @@ void CJllServerApp::OnAppAbout()
 void CJllServerApp::OnFileNew() 
 {
 	// TODO: Add your command handler code here
-	_OutputDebugString( "theApp> ON FILE NEW.\n" );
+	_OutputDebugString( L"theApp> ON FILE NEW.\n" );
 	CWinApp::OnFileNew();
 }
 
@@ -352,24 +343,28 @@ CString CJllServerApp::LoadProfileStrings(int nIndex /* = 0 */)
 	if( nIndex == 0 )
 	{
 		strStringItem = "Starting Directory";
-		m_sStartingDir = GetProfileString( strSection, strStringItem, "C:\\" );
+		m_sStartingDir = GetProfileString( strSection, strStringItem, L"C:\\" );
 		if( ::SetCurrentDirectory( m_sStartingDir ) == FALSE )
 		{
-			char szPath[ 1024 ];			// Buffer to hold path information
-			::GetCurrentDirectory( sizeof szPath, szPath );
+			// Declare buffer using TCHAR for character set portability
+			TCHAR szPath[_MAX_PATH]; // _MAX_PATH is a good general-purpose path buffer size
+
+			// Call GetCurrentDirectory, calculating size in TCHARs
+			::GetCurrentDirectory(sizeof(szPath) / sizeof(TCHAR), szPath);
+
 			m_sStartingDir = szPath;
 		}
-		m_bDetectSpkOn = GetProfileInt( strSection, "Detecting Speaker", 0 );
+		m_bDetectSpkOn = GetProfileInt( strSection, L"Detecting Speaker", 0 );
 		return m_sStartingDir;
 	}
 	else
 	{
-		strStringItem.Format( "Saved Folder %d", nIndex );
+		strStringItem.Format( L"Saved Folder %d", nIndex );
 		return GetProfileString( strSection, strStringItem );
 	}
 }
 
-void CJllServerApp::StoreProfileStrings(int nIndex /* = 0 */, LPCSTR pzText /* = NULL */)
+void CJllServerApp::StoreProfileStrings(int nIndex /* = 0 */, LPCTSTR pzText /* = NULL */)
 {
 	ASSERT( nIndex >= 0 && nIndex < 10 );
 
@@ -379,7 +374,7 @@ void CJllServerApp::StoreProfileStrings(int nIndex /* = 0 */, LPCSTR pzText /* =
 	if( nIndex == 0 )
 		strStringItem = "Starting Directory";
 	else
-		strStringItem.Format( "Saved Folder %d", nIndex );
+		strStringItem.Format( L"Saved Folder %d", nIndex );
 
 	if( pzText )
 		VERIFY( WriteProfileString( strSection, strStringItem, pzText ) == TRUE );
@@ -404,7 +399,7 @@ void CJllServerApp::OnEditDisablewarmpoll()
 
 		res = RegQueryValueEx(
 				phkResult,					// handle to key to query
-				"DisableWarmPoll",			// address of name of value to query
+				L"DisableWarmPoll",			// address of name of value to query
 				NULL,						// reserved
 				&myType,					// address of buffer for value type
 				(LPBYTE)&myData,			// address of data buffer
@@ -437,7 +432,7 @@ void CJllServerApp::OnEditDisablewarmpoll()
 
 	res = RegSetValueEx(
 		phkResult,					// handle to key to query
-		"DisableWarmPoll",			// address of name of value to query
+		L"DisableWarmPoll",			// address of name of value to query
 		NULL,						// reserved
 		myType,						// address of buffer for value type
 		(LPBYTE)&myData,			// address of data buffer

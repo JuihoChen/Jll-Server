@@ -18,7 +18,7 @@
 #define UWM_SERVER_END	(WM_APP+12)		// Message to indicate end of server thread
 #define UWM_ADD_STRING	(WM_APP+13)		// Message to add string to CJllServerDoc
 
-#define UWM_ARE_YOU_ME_MSG	_T("UWM_ARE_YOU_ME-{5DC84998-8E67-4369-B279-F77AB0B099B2}")
+#define UWM_ARE_YOU_ME_MSG	L"UWM_ARE_YOU_ME-{5DC84998-8E67-4369-B279-F77AB0B099B2}"
 
 const UINT UWM_ARE_YOU_ME = ::RegisterWindowMessage( UWM_ARE_YOU_ME_MSG );
 
@@ -57,7 +57,7 @@ public:
 public:
 	CJllServerView* GetActiveView() const;
 	void FormatOutput( LPCTSTR lpszFormat, ... );
-	UINT StartTimer(UINT nIDEvent);
+	UINT_PTR StartTimer(UINT nIDEvent);
 	void StopTimer(UINT nIDEvent);
 	void CheckReTimerToDetectGuest();
 	void SetupTrayIcon();
@@ -73,14 +73,14 @@ protected:  // control bar embedded members
 	CProgressBar m_cProgressBar;
 	CTrayIcon	m_cTrayIcon;
 	HICON		m_hIconDisconnect, m_hIconConnected;
-	UINT		m_nTimerDetectGuest;
+	UINT_PTR	m_nTimerDetectGuest;
 
 // Generated message map functions
 protected:
 	//{{AFX_MSG(CMainFrame)
 	afx_msg void OnUpdateFileSave(CCmdUI* pCmdUI);
 	afx_msg void OnUpdateFileSaveAs(CCmdUI* pCmdUI);
-	afx_msg void OnTimer(UINT nIDEvent);
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnClose();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnTaskbarMenuShow();
@@ -95,7 +95,7 @@ protected:
 	afx_msg LRESULT OnCopyProgress(WPARAM, LPARAM);
 	afx_msg LRESULT OnAreYouMe(WPARAM, LPARAM);
 	afx_msg LRESULT OnTaskBarCreated(WPARAM, LPARAM);
-	afx_msg void OnNotifyIcon(WPARAM, LPARAM);
+	afx_msg LRESULT OnNotifyIcon(WPARAM, LPARAM);
 	DECLARE_MESSAGE_MAP()
 };
 

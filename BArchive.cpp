@@ -2,6 +2,7 @@
 //
 //////////////////////////////////////////////////////////////////////
 
+#include <tchar.h>
 #include "stdafx.h"
 #include "Jll Server.h"
 #include "BArchive.h"
@@ -9,7 +10,7 @@
 
 #ifdef _DEBUG
 #undef THIS_FILE
-static char THIS_FILE[]=__FILE__;
+static const char * THIS_FILE = __FILE__;
 #define new DEBUG_NEW
 #endif
 
@@ -38,6 +39,7 @@ CBArchive::CBArchive( CDirectCable& rDcc, UINT nMode, int nBufSize /* = BF_MAXLE
 	m_nMode = nMode;
 	m_fpBufStart = m_fpBufCur = rDcc.m_fpBuffer;
 	m_fpBufMax = m_fpBufStart + nBufSize;
+	m_fpOrig = 0;
 	ASSERT( AfxIsValidAddress( m_fpBufStart, nBufSize ) );
 }
 
@@ -46,7 +48,7 @@ void CBArchive::LoadFileName( CString& rFullName )
 	ASSERT_VALID( this );
 	ASSERT( IsLoading() );
 
-	char szBuffer[ 15 ], *psz = szBuffer;
+	char szBuffer[ 15 ] = {0}, * psz = szBuffer;
 	for( int i = 0; i < 8; i ++ )
 	{
 		if( m_fpBufCur[ i ] == '\0' || isspace( m_fpBufCur[ i ] ) )
@@ -56,7 +58,7 @@ void CBArchive::LoadFileName( CString& rFullName )
 	if( m_fpBufCur[ 8 ] != '\0' && !isspace( m_fpBufCur[ 8 ] ) )
 	{
 		*psz++ = '.';
-		for( i = 8; i < 11; i ++ )
+		for( int i = 8; i < 11; i ++ )
 		{
 			if( m_fpBufCur[ i ] == '\0' || isspace( m_fpBufCur[ i ] ) )
 				break;
@@ -106,8 +108,8 @@ void CBArchive::StoreFileName( const CString& rFullName )
 	if( sFileName.GetLength() > 8 || sExt.GetLength() > 3 )
 	{
 		RestorePosition();
-		::OutputDebugString( "CInfoException::BadShortPathName -- " );
-		::OutputDebugString( (LPCSTR)(sFileName + "." + sExt) );
+		::OutputDebugString( L"CInfoException::BadShortPathName -- " );
+		::OutputDebugString( (LPCTSTR)(sFileName + "." + sExt) );
 		TRACE( "Error: erroneous \"shortpathname\" occurred.\n" );
 		THROW( new CInfoException( CInfoException::BadShortPathName ) );
 	}
@@ -164,7 +166,7 @@ void CFileInfo::GetStatus( BOOL fTryNetpath /* = FALSE */)
 	}
 	if( hFind == INVALID_HANDLE_VALUE )
 	{
-		TRACE2( "FindFirstFile (%s) not successful - GetLastError = %d\n", (LPCSTR) m_sFileName, GetLastError() );
+		TRACE2( "FindFirstFile (%s) not successful - GetLastError = %d\n", (LPCTSTR) m_sFileName, GetLastError() );
 		THROW( new CFileException( CFileException::fileNotFound ) );
 	}
 	VERIFY( FindClose( hFind ) );
@@ -278,22 +280,30 @@ void CFileInfo::Dump( CDumpContext& dc ) const
 {
 	ASSERT_VALID( this );
 	CString sTemp1, sTemp2;
-	const long mtime = *(const long*)&m_mtime;
-	char* psz = ctime( &mtime );
 
-	if( (psz == NULL) || (mtime == 0) )
-		sTemp1.Format( "CTime(invalid #%ld)", mtime );
+	const time_t mtime = static_cast<time_t>(*(const long*)&m_mtime);
+
+	char szTimeBuffer[26]; // Buffer for ctime_s, includes null terminator
+	errno_t err = ctime_s(szTimeBuffer, sizeof(szTimeBuffer), &mtime);
+
+	if (err != 0 || mtime == 0) // Check for error from ctime_s or invalid time
+		sTemp1.Format( L"CTime(invalid #%I64d)", mtime );
+
 	else
 	{
-		// format it
-		psz[24] = '\0';         // nuke newline
-		sTemp1.Format( "CTime(\"%s\")", psz );
+		// ctime_s produces a newline at the end. Nuke it.
+		char* newline_pos = strchr(szTimeBuffer, '\n');
+		if (newline_pos != NULL)
+		{
+			*newline_pos = '\0';
+		}
+		sTemp1.Format( L"CTime(\"%s\")", (LPCTSTR) szTimeBuffer);
 	}
 
-	sTemp2.Format( "FileInfo: <filename> %s <filesize> %d\n"
-				   "          <attribute> 0x%0x <mtime> %s <%d>\n",
-				   (LPCSTR) m_sFileName, m_size, m_attribute,
-				   (LPCSTR) sTemp1, mtime );
+	sTemp2.Format( L"FileInfo: <filename> %s <filesize> %d\n"
+					"          <attribute> 0x%0x <mtime> %s <%I64d>\n",
+				   (LPCTSTR) m_sFileName, m_size, m_attribute,
+				   (LPCTSTR) sTemp1, mtime );
 	dc << sTemp2;
 }
 #endif

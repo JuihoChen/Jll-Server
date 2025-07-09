@@ -97,16 +97,16 @@ public:
 
 // Writes a byte to a parallel port's data port.
 inline void CParPort::DataPortWrite( WORD base, WORD value )
-	{ _outp( base, value ); }
+	{ __outbyte( base, (BYTE) value ); }
 // Reads a parallel port's status port. And inverts bit 7 of the byte read
 // for that the status-port hardware reinverts these bits.
 inline BYTE CParPort::StatusPortRead( WORD base )
-	{ return _inp( base + 1 ) ^ 0x80; }
+	{ return __inbyte( base + 1 ) ^ 0x80; }
 // Writes a Value to a parallel port's control port. Calculates the control-port
 // address from the port's base address, and inverts bits 0, 1, & 3.
 // (The control-port hardware reinverts these bits.)
 inline void CParPort::ControlPortWrite( WORD base, WORD value )
-	{ _outp( base + 2, value ^ 0x0b ); }
+	{ __outbyte( base + 2, value ^ 0x0b ); }
 
 inline WORD CParPort::GetBaseAddr() const
 	{ ASSERT_VALID( this ); return m_wBaseAddress; }

@@ -2,6 +2,8 @@
 //
 //////////////////////////////////////////////////////////////////////
 
+#define _CRT_SECURE_NO_WARNINGS // Needs to be file top!
+
 #include "stdafx.h"
 #include "Jll Server.h"
 #include "Jll ServerDoc.h"
@@ -12,7 +14,7 @@
 
 #ifdef _DEBUG
 #undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
+static const char * THIS_FILE = __FILE__;
 #define new DEBUG_NEW
 #endif
 
@@ -34,8 +36,8 @@ const int CDirectCable::m_nMaxSizeBase = (BF_MAXLEN - 2) / _FI_LEN - 1;
 CDirectCable::CDirectCable( CNibbleModeProto& lpt ) : m_rNibbleModeDev( lpt )
 {
 	ASSERT_VALID( &lpt );
-	m_pfnSendFromBuffer = SendFromBuffer;
-	m_pfnReceiveIntoBuffer = ReceiveIntoBuffer;
+	m_pfnSendFromBuffer = &CDirectCable::SendFromBuffer;
+	m_pfnReceiveIntoBuffer = &CDirectCable::ReceiveIntoBuffer;
 	m_fpBuffer = (BYTE*)malloc( 65536 );
 	ASSERT( m_fpBuffer != NULL);
 }
@@ -50,13 +52,14 @@ CDirectCable::~CDirectCable()
 
 #pragma check_stack( off )
 
-void CDirectCable::SendFromBuffer( UINT nLen ) const
+void CDirectCable::SendFromBuffer( SIZE_T nLen ) const
 {
 	ASSERT( nLen > 0 && nLen <= BF_MAXLEN );
+	register UINT n;
 
 	gblQPCTimer.SetTimer( 8 );		// v0.17 sets 8-sec timeout.
 	m_rNibbleModeDev.SetPollCounter( 0 );
-	for( register UINT n = 0; -- nLen; n ++ )
+	for( n = 0; -- nLen; n ++ )
 	{
 		m_rNibbleModeDev.WriteByteToPort( m_fpBuffer[ n ] );
 	}
@@ -65,7 +68,7 @@ void CDirectCable::SendFromBuffer( UINT nLen ) const
 	m_rNibbleModeDev.WriteByteToPort( m_fpBuffer[ n ] );
 }
 
-void CDirectCable::ReceiveIntoBuffer( register UINT nIndex, UINT nLen )
+void CDirectCable::ReceiveIntoBuffer( register SIZE_T nIndex, SIZE_T nLen )
 // the reason to use param nIndex is that data from the opposite
 // could be sent in different packets. (ex. header + data)
 
@@ -88,13 +91,14 @@ void CDirectCable::ReceiveIntoBuffer( register UINT nIndex, UINT nLen )
 }
 
 #ifdef POLL_S7_FOR_BUSY
-void CDirectCable::SendFromBufferInByte( UINT nLen ) const
+void CDirectCable::SendFromBufferInByte( SIZE_T nLen ) const
 {
 	ASSERT( nLen > 0 && nLen <= BF_MAXLEN );
+	register UINT n;
 
 	gblQPCTimer.SetTimer( 8 );		// v0.17 sets 8-sec timeout.
 	m_rNibbleModeDev.SetPollCounter( 0 );
-	for( register UINT n = 0; nLen > 2; n += 2, nLen -= 2 )
+	for( n = 0; nLen > 2; n += 2, nLen -= 2 )
 	{
 		m_rNibbleModeDev.WriteByteToPortInByte( *(WORD*)(m_fpBuffer +n) );
 	}
@@ -103,7 +107,7 @@ void CDirectCable::SendFromBufferInByte( UINT nLen ) const
 	m_rNibbleModeDev.WriteByteToPortInByte( *(WORD*)(m_fpBuffer + n) );
 }
 
-void CDirectCable::ReceiveIntoBufferInByte( register UINT nIndex, UINT nLen )
+void CDirectCable::ReceiveIntoBufferInByte( register SIZE_T nIndex, SIZE_T nLen )
 {
 	ASSERT( nIndex >= 0 && nLen > 0 );
 	ASSERT( nIndex <= BF_MAXLEN && (nIndex + nLen - 1) <= BF_MAXLEN );
@@ -125,7 +129,11 @@ void CDirectCable::ReceiveIntoBufferInByte( register UINT nIndex, UINT nLen )
 void CDirectCable::FillBuffer( UINT nIndex, BYTE* src, UINT nLen )
 {
 	ASSERT_VALID( this );
-	ASSERT( src );
+	if( src == NULL )
+	{
+		ASSERT(FALSE);  // Debug builds will still assert
+		return;         // Release builds will safely return
+	}
 	ASSERT( nIndex >= 0 && nLen > 0 );
 	ASSERT( nIndex <= BF_MAXLEN && (nIndex + nLen - 1) <= BF_MAXLEN );
 	memcpy( m_fpBuffer + nIndex, src, nLen );
@@ -141,19 +149,19 @@ CString CDirectCable::GetString( int nIndex, int nMaxLen ) const
 
 	char szBuffer[ _MAX_PATH + 1 ];
 	memset( szBuffer, 0, sizeof szBuffer );
-	strncpy( szBuffer, (LPCSTR) m_fpBuffer + nIndex, nMaxLen );
+	strncpy_s( szBuffer, sizeof(szBuffer), (LPCSTR)m_fpBuffer + nIndex, nMaxLen );
 	return szBuffer;
 }
 
 void CDirectCable::SetString( UINT nIndex, CString& rString )
 {
 	int nLen = rString.GetLength();		// not include the null terminator
+	size_t copyLen = static_cast<size_t>(nLen) + 1;
+	ASSERT_VALID(this);
+	ASSERT(nIndex >= 0);
+	ASSERT(nIndex <= BF_MAXLEN && (nIndex + nLen) <= (BF_MAXLEN + 1));
 
-	ASSERT_VALID( this );
-	ASSERT( nIndex >= 0 );
-	ASSERT( nIndex <= BF_MAXLEN && (nIndex + nLen - 1) <= BF_MAXLEN );
-
-	memcpy( m_fpBuffer + nIndex, (LPCSTR) rString, nLen + 1 );
+	memcpy(m_fpBuffer + nIndex, (LPCTSTR) rString, copyLen);
 }
 
 // calculate CRC (16 bits) for buffered data, and set codeword trailing the data.
@@ -193,7 +201,7 @@ void CDirectCable::DeleteBase( tmplTOCARRAY* pTocAr )
 	pTocAr->RemoveAll();
 }
 
-CString CDirectCable::ConcatDir( const CString& rsDir, LPCSTR pzName )
+CString CDirectCable::ConcatDir( const CString& rsDir, LPCTSTR pzName )
 {
 	CString sFullName = rsDir;
 	// Take care of directory name alike "C:\"...
@@ -226,7 +234,7 @@ CDCServer::CDCServer( CNibbleModeProto& lpt ) : CDirectCable( lpt )
 
 CDCServer::~CDCServer()
 {
-	_OutputDebugString( "CDCServer::Destructor called.\n" );
+	_OutputDebugString( L"CDCServer::Destructor called.\n" );
 
 	DWORD dwExitCode;
 	// If the specified thread has not terminated, the termination status returned
@@ -250,7 +258,7 @@ CDCServer::~CDCServer()
 void CDCServer::ParseWorkDir( CString sFolderName )
 {
 	// The passed foldername should be an existent and been-checked folder name.
-	char szShort[_MAX_PATH];
+	TCHAR szShort[_MAX_PATH];
 	::GetShortPathName( sFolderName, szShort, sizeof szShort );
 
 	m_sDirName = szShort;
@@ -335,7 +343,7 @@ void CDCServer::SendFileInfo()
 		m_fiInfo.m_bFileInUse = FALSE;
 	}
 
-	m_fiInfo.m_sFileName = ConcatDir( m_sDirName, m_aFiInfoBase[ nIndex ]->m_sFileName );
+	m_fiInfo.m_sFileName = ConcatDir(m_sDirName, m_aFiInfoBase[nIndex]->m_sFileName);
 
 	TRY
 	{
@@ -359,8 +367,8 @@ void CDCServer::SendFileInfo()
 
 	RetCheckStatus( OkStatus );
 
-	FormatOutput( "Transferring file info. <%s> %s",
-		(LPCSTR) m_aFiInfoBase[ nIndex ]->m_sFileName, CTime::GetCurrentTime().Format( "at %H:%M:%S" )
+	FormatOutput( L"Transferring file info. <%s> %s",
+		(LPCTSTR) m_aFiInfoBase[ nIndex ]->m_sFileName, CTime::GetCurrentTime().Format( "at %H:%M:%S" )
 	);
 
 	m_fiInfo.m_bFileInUse = TRUE;			// set indicator for proper sequence
@@ -404,7 +412,7 @@ void CDCServer::SendData()
 	}
 	CATCH( CFileException, e )
 	{
-		FormatOutput( "Error: caught a file exception <%d> -- %s.",
+		FormatOutput( L"Error: caught a file exception <%d> -- %s.",
 			e->m_cause, CInfoException::TranslateCause( e->m_cause ) );
 
 		RetCheckStatus( NgFileException );
@@ -421,7 +429,7 @@ void CDCServer::SendData()
 		SetAt( wTransferLen, (WORD) Get_CRC_CheckSum( wTransferLen ) );
 		TRACE1( "seed = %x\n", CDirectCable::GetWord( wTransferLen ) );
 
-		(this->*m_pfnSendFromBuffer)( wTransferLen + 2 );
+		(this->*m_pfnSendFromBuffer)( static_cast<SIZE_T>(wTransferLen) + 2 );
 	}
 
 	if( bAttribute & b6_CF )				// close file after data sent?
@@ -494,7 +502,7 @@ void CDCServer::ChangeDir()
 		TRACE( " ==> could not retrieve status, invalid path name.\n" );
 
 		RetCheckStatus( NgFileException );
-		FormatOutput( "Error: <%s> could be an invalid network path.", (LPCSTR) m_fiInfo.m_sFileName );
+		FormatOutput( L"Error: <%s> could be an invalid network path.", (LPCTSTR) m_fiInfo.m_sFileName );
 		return;
 	}
 	END_CATCH
@@ -526,7 +534,7 @@ void CDCServer::ChangeDir()
 				TRACE( " ==> could not retrieve files inside this directory.\n" );
 
 				RetCheckStatus( NgFileException );
-				FormatOutput( "Error: <%s> could be a system-use path.", (LPCSTR) m_fiInfo.m_sFileName );
+				FormatOutput( L"Error: <%s> could be a system-use path.", (LPCTSTR) m_fiInfo.m_sFileName );
 				return;
 			}
 			END_CATCH		
@@ -605,7 +613,7 @@ void CDCServer::CreateTOC( WORD nAlloc, BOOL fResp /* = TRUE */)
 		{
 			if( FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY )
 			{
-				if( strcmp( FindFileData.cFileName, _SELF_DIR ) )
+				if(_tcscmp( FindFileData.cFileName, _SELF_DIR ) )
 				{
 					// Add this item to the list
 					AddIntoTOC( bar, &FindFileData );
@@ -641,7 +649,7 @@ void CDCServer::CreateTOC( WORD nAlloc, BOOL fResp /* = TRUE */)
 	{
 		if( e->GetError() == CInfoException::InvalidFindFile || e->GetError() == CInfoException::DeniedAccess )
 		{
-			FormatOutput( "Error: caught an info. exception => bad network path or access denied." );
+			FormatOutput( L"Error: caught an info. exception => bad network path or access denied." );
 			if( fResp )
 			{
 				RetCheckStatus( NgFileException );
@@ -650,12 +658,12 @@ void CDCServer::CreateTOC( WORD nAlloc, BOOL fResp /* = TRUE */)
 			else
 			{
 				///*v0.25***AfxThrowFileException( CFileException::invalidFile, ERROR_ACCESS_DENIED, __FILE__ );
-				::OutputDebugString( "Should have touched some untouchable folder...\n" );
+				::OutputDebugString( L"Should have touched some untouchable folder...\n" );
 			}
 		}
 		else  // ==> e->GetError() == CInfoException::BArchiveOverflow
 		{
-			::OutputDebugString( " ==> revise/fake bar pointer for checking.\n" );
+			::OutputDebugString( L" ==> revise/fake bar pointer for checking.\n" );
 		}
 	}
 	END_CATCH
@@ -670,14 +678,14 @@ void CDCServer::CreateTOC( WORD nAlloc, BOOL fResp /* = TRUE */)
 
 	if( fResp ) RetCheckStatus( OkStatus );
 
-	FormatOutput( "Transferring directory %s", (LPCSTR) m_sTocDir );
+	FormatOutput( L"Transferring directory %s", (LPCTSTR) m_sTocDir );
 
 	// limit the dir/file count to be passed to the Guest.
-	int nCount = m_pTocAr->GetSize();
+	INT_PTR nCount = m_pTocAr->GetSize();
 	if (nCount > m_nMaxSizeBase)
 	{
 		nCount = m_nMaxSizeBase;
-		FormatOutput( "... Cut transferred items to %d.", nCount );
+		FormatOutput( L"... Cut transferred items to %d.", nCount );
 	}
 	SetAt( 0, (WORD) nCount );
 
@@ -780,7 +788,7 @@ void CDCServer::SendSpecific()
 	(this->*m_pfnReceiveIntoBuffer)( 0, nNameLenZ );
 
 	m_sTocDir = GetString( 0, nNameLenZ );
-	TRACE1( "the specified name = %s\n", (LPCSTR) m_sTocDir );
+	TRACE1( "the specified name = %s\n", (LPCTSTR) m_sTocDir );
 
 	if( m_fiInfo.m_fiArchive.m_hFile != CFile::hFileNull )
 	{
@@ -845,18 +853,18 @@ void CDCServer::SwitchBusSpeed()
 	}
 	else if( nSpeedMode == b7_8Bit )
 	{
-		m_pfnSendFromBuffer = SendFromBufferInByte;
-		m_pfnReceiveIntoBuffer = ReceiveIntoBufferInByte;
+		m_pfnSendFromBuffer = &CDCServer::SendFromBufferInByte;
+		m_pfnReceiveIntoBuffer = &CDCServer::ReceiveIntoBufferInByte;
 	}
 	else  // 0x0 for 4-bit
 	{
-		m_pfnSendFromBuffer = SendFromBuffer;
-		m_pfnReceiveIntoBuffer = ReceiveIntoBuffer;
+		m_pfnSendFromBuffer = &CDCServer::SendFromBuffer;
+		m_pfnReceiveIntoBuffer = &CDCServer::ReceiveIntoBuffer;
 	}
 #endif
 }
 
-void CDCServer::FormatOutput( LPCTSTR lpszFormat, ... )
+void CDCServer::FormatOutput( LPCTSTR lpszFormat, ... ) const
 {
 	CString* ps = new CString;
 	ASSERT( AfxIsValidString( lpszFormat ) );
@@ -942,13 +950,13 @@ UINT CDCServer::DoWork()
 	}
 	AND_CATCH( CFileException, e )
 	{
-		FormatOutput( "Error: caught a file exception <%d> -- %s.",
+		FormatOutput( L"Error: caught a file exception <%d> -- %s.",
 			e->m_cause, CInfoException::TranslateCause( e->m_cause ) );
 	}
 	AND_CATCH( CException, e )
 	{
 		CString sTemp;
-		sTemp.Format( "Unexpected exception:> %s\r\n", e->GetRuntimeClass()->m_lpszClassName );
+		sTemp.Format( L"Unexpected exception:> %s\r\n", e->GetRuntimeClass()->m_lpszClassName );
 		GetMyMainFrame()->m_ExceptDlg.AddStringToEdit( sTemp );
 
 		::PostMessage( m_hWndOwner, UWM_EXCEPT_BOX, 0, 0L );
@@ -1029,7 +1037,7 @@ void CDCServer::Dump( CDumpContext& dc ) const
 	for( int i = 0; i < sizeof( m_bCDB ); i ++ )
 	{	
 		CString s;
-		s.Format( " %2x", m_bCDB[i] );
+		s.Format( L" %2x", m_bCDB[i] );
 		sTemp += s;
 	}
 	sTemp += "\n";
